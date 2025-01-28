@@ -5,7 +5,6 @@
 
 
 ## Scenes theme
-
 For my scene, I have a triangle, circle-ish shape, and a square. I plan to make a firework scene where the triangle represents a mountain, the circle represents the firework explosion, and the square will eventually represent a house.
 
 ## Note:
