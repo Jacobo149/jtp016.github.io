@@ -54,6 +54,7 @@ export default class SceneObject {
       xhttp.setRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
       xhttp.onload = function() {
         if (xhttp.readyState === XMLHttpRequest.DONE && xhttp.status === 200) {
+          console.log(xhttp.responseText);
           resolve(xhttp.responseText);
         }
         else {
