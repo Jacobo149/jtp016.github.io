@@ -7,6 +7,27 @@ export default class ParticleSystemObject extends SceneObject {
     this._step = 0;
     this._emissionRate = 10;  // Number of particles to emit each frame
     this._emissionTimer = 0;  // Timer to handle emission intervals
+    this.mousePosition = { x: 0, y: 0 }; // Store mouse position
+    this.setupMouseListener(); // Add event listener
+
+    // Initialize mouse position buffer
+    this._mousePositionBuffer = this._device.createBuffer({
+      size: Float32Array.BYTES_PER_ELEMENT * 2, // 2 elements: x, y coordinates
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+  }
+
+  setupMouseListener() {
+    // Track mouse position
+    window.addEventListener("mousemove", (event) => {
+      this.mousePosition.x = event.clientX / window.innerWidth * 2 - 1; // Normalize to [-1, 1]
+      this.mousePosition.y = - (event.clientY / window.innerHeight * 2 - 1); // Normalize to [-1, 1]
+    });
+
+    // You could also handle clicks to trigger specific actions, if desired
+    window.addEventListener("click", () => {
+      // Add logic for particle attraction on mouse click (if necessary)
+    });
   }
 
   async createGeometry() { 
@@ -48,7 +69,6 @@ export default class ParticleSystemObject extends SceneObject {
     this._device.queue.writeBuffer(this._particleBuffers[this._step % 2], 0, this._particles);
     this._device.queue.submit([]);  // Ensure buffer updates
   }
-  
 
   emitParticles(numParticles) {
     let emitted = 0;
@@ -82,25 +102,23 @@ export default class ParticleSystemObject extends SceneObject {
     this._device.queue.writeBuffer(this._particleBuffers[this._step % 2], 0, this._particles);
     this._device.queue.submit([]);  // Ensure buffer updates
   }
-  
-  
-  
-  
 
+  // Update method to write the mouse position buffer
   update(dt) {
     this._emissionTimer += dt;
-  
+    
     // Emit particles periodically
     if (this._emissionTimer >= 1 / this._emissionRate) {
       this.emitParticles(10);  // Emit 10 particles each frame
       this._emissionTimer = 0;  // Reset the emission timer
     }
-  
+
+    // Update the mouse position buffer with current mouse coordinates
+    this._device.queue.writeBuffer(this._mousePositionBuffer, 0, new Float32Array([this.mousePosition.x, this.mousePosition.y]));
+
     // Update the particles' positions, velocities, etc.
     this.compute();
   }
-  
-  
 
   async createShaders() {
     let shaderCode = await this.loadShader("/shaders/particles.wgsl");
@@ -113,7 +131,8 @@ export default class ParticleSystemObject extends SceneObject {
     this._computeBindGroupLayout = this._device.createBindGroupLayout({
       entries: [
           { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
-          { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } }
+          { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+          { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: "uniform" } } // Mouse position buffer type
       ]
     });
 
@@ -137,14 +156,16 @@ export default class ParticleSystemObject extends SceneObject {
             layout: this._computeBindGroupLayout,
             entries: [
                 { binding: 0, resource: { buffer: this._particleBuffers[0] } },
-                { binding: 1, resource: { buffer: this._particleBuffers[1] } }
+                { binding: 1, resource: { buffer: this._particleBuffers[1] } },
+                { binding: 2, resource: { buffer: this._mousePositionBuffer } } // Mouse position buffer
             ]
         }),
         this._device.createBindGroup({
             layout: this._computeBindGroupLayout,
             entries: [
                 { binding: 0, resource: { buffer: this._particleBuffers[1] } },
-                { binding: 1, resource: { buffer: this._particleBuffers[0] } }
+                { binding: 1, resource: { buffer: this._particleBuffers[0] } },
+                { binding: 2, resource: { buffer: this._mousePositionBuffer } } // Mouse position buffer
             ]
         })
     ];
@@ -175,30 +196,12 @@ export default class ParticleSystemObject extends SceneObject {
 
   async createComputePipeline() {
     this._computePipeline = this._device.createComputePipeline({
-        layout: this._computePipelineLayout,
-        compute: {
-            module: this._shaderModule,
-            entryPoint: "computeMain"
-        }
+      layout: this._computePipelineLayout,
+      compute: {
+        module: this._shaderModule,
+        entryPoint: "computeMain"
+      }
     });
-
-    // Ensure compute bind groups are created with `storage` (read/write)
-    this._computeBindGroups = [
-        this._device.createBindGroup({
-            layout: this._computeBindGroupLayout,
-            entries: [
-                { binding: 0, resource: { buffer: this._particleBuffers[0] } },
-                { binding: 1, resource: { buffer: this._particleBuffers[1] } }
-            ]
-        }),
-        this._device.createBindGroup({
-            layout: this._computeBindGroupLayout,
-            entries: [
-                { binding: 0, resource: { buffer: this._particleBuffers[1] } },
-                { binding: 1, resource: { buffer: this._particleBuffers[0] } }
-            ]
-        })
-    ];
   }
 
   render(pass) {

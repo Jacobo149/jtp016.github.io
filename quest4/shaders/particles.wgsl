@@ -10,8 +10,6 @@ struct Particle {
 // Define gravity constant in the compute shader
 const gravity = vec2f(0.0, -0.05);  // Gravity in the y direction (downward)
 
-
-
 // Bind groups for input and output particles
 @group(0) @binding(0) var<storage, read> particlesIn: array<Particle>;
 @group(0) @binding(1) var<storage, read_write> particlesOut: array<Particle>;
@@ -41,45 +39,52 @@ fn fragmentMain() -> @location(0) vec4f {
   return vec4f(238.0/255.0, 118.0/255.0, 35.0/255.0, 1.0); // Particle color (RGB)
 }
 
+// Add mouse position as input
+@group(0) @binding(2) var<uniform> mousePosition: vec2f;
+
 // Compute shader to update particle positions, velocities, and handle boundary conditions
 @compute @workgroup_size(256)
 fn computeMain(@builtin(global_invocation_id) global_id: vec3u) {
   let idx = global_id.x;
-  
+
   if (idx < arrayLength(&particlesIn)) {
     var p = particlesIn[idx];
-    
+
     // If the particle is active, update its position and velocity
-    if (p.isActive == 1) { // Check for active status
-      p.age += 0.016; // Increment the age by the frame time (approx 16ms)
+    if (p.isActive == 1) {
+      p.age += 0.016;
 
       if (p.age > p.lifespan) {
-        p.isActive = 0; // Deactivate the particle once it exceeds its lifespan
+        p.isActive = 0;
       } else {
         // Apply gravity to the velocity
-        p.velocity += gravity * 0.016; // Update velocity based on gravity
-        
+        p.velocity += gravity * 0.016;
+
+        // Apply mouse attraction force
+        let direction = mousePosition - p.position; // Direction vector from particle to mouse
+        let distance = length(direction);
+        if (distance > 0.1) { // Apply attraction only if particle is far enough
+          let attraction = normalize(direction) * 0.05; // Apply constant attraction force
+          p.velocity += attraction;
+        }
+
         // Update position based on velocity
         p.position += p.velocity * 0.016;
       }
     }
 
     // Check if particle needs to be emitted (reactivated)
-    if (p.isActive == 0) { // Check for inactive status
-      // Re-emitting the particle (at the center with random velocity)
-      p.position = vec2f(0.0, 0.0);  // Position at the center
+    if (p.isActive == 0) {
+      p.position = vec2f(0.0, 0.0);
       p.velocity = vec2f((fract(sin(f32(idx) * 0.8) * 43758.5453) * 2.0 - 1.0) * 0.1,
-                         (fract(cos(f32(idx) * 0.8) * 43758.5453) * 2.0 - 1.0) * 0.1); // Random velocity
-      p.lifespan = 5.0; // Set a lifespan of 5 seconds for new particles
-      p.age = 0.0; // Reset age to 0 when the particle is re-emitted
-      p.isActive = 1; // Activate the particle (set to 1)
+                         (fract(cos(f32(idx) * 0.8) * 43758.5453) * 2.0 - 1.0) * 0.1);
+      p.lifespan = 5.0;
+      p.age = 0.0;
+      p.isActive = 1;
     }
 
     // Update the particle in the output buffer
     particlesOut[idx] = p;
   }
 }
-
-
-
 
