@@ -5,6 +5,8 @@ export default class ParticleSystemObject extends SceneObject {
     super(device, canvasFormat);
     this._numParticles = numParticles;
     this._step = 0;
+    this._emissionRate = 10;  // Number of particles to emit each frame
+    this._emissionTimer = 0;  // Timer to handle emission intervals
   }
 
   async createGeometry() { 
@@ -12,8 +14,8 @@ export default class ParticleSystemObject extends SceneObject {
   }
 
   async createParticleGeometry() {
-    this._particles = new Float32Array(this._numParticles * 6);
-    
+    this._particles = new Float32Array(this._numParticles * 8);  // 6 elements per particle: x, y, velocity x, velocity y
+
     this._particleBuffers = [
       this._device.createBuffer({
         size: this._particles.byteLength,
@@ -29,43 +31,76 @@ export default class ParticleSystemObject extends SceneObject {
   }
 
   resetParticles() {
-    const numCircles = 5; // Number of circles
-    const radius = 0.2;   // Radius of each circle
-    const spacing = 1.2;  // Increased spacing for visibility
-
-    const centers = [];
-    for (let i = 0; i < numCircles; i++) {
-        let angle = (i / numCircles) * Math.PI * 2;
-        centers.push({
-            x: Math.cos(angle) * spacing,
-            y: Math.sin(angle) * spacing
-        });
-    }
-
     for (let i = 0; i < this._numParticles; ++i) {
-        const circleIndex = i % numCircles;
-        const angle = Math.random() * Math.PI * 2;
-
-        const center = centers[circleIndex];
-        const x = center.x + Math.cos(angle) * radius;
-        const y = center.y + Math.sin(angle) * radius;
-
-        this._particles[6 * i + 0] = x;
-        this._particles[6 * i + 1] = y;
-        this._particles[6 * i + 2] = x;
-        this._particles[6 * i + 3] = y;
-        this._particles[6 * i + 4] = (Math.random() * 2 - 1) * 0.05;
-        this._particles[6 * i + 5] = (Math.random() * 2 - 1) * 0.05;
+      if (this._particles[8 * i + 7] === 0) {
+        // Reset only inactive particles
+        this._particles[8 * i + 0] = 0.0;  // position x
+        this._particles[8 * i + 1] = 0.0;  // position y
+        this._particles[8 * i + 2] = 0.0;  // initial velocity x
+        this._particles[8 * i + 3] = 0.0;  // initial velocity y
+        this._particles[8 * i + 4] = 0.0;  // velocity x
+        this._particles[8 * i + 5] = 0.0;  // velocity y
+        this._particles[8 * i + 6] = 0.0;  // lifespan
+        this._particles[8 * i + 7] = 0.0;  // age
+      }
     }
-
-    console.log("Updated Particle Positions:", this._particles.slice(0, 60));
-
     this._step = 0;
     this._device.queue.writeBuffer(this._particleBuffers[this._step % 2], 0, this._particles);
     this._device.queue.submit([]);  // Ensure buffer updates
-}
+  }
+  
 
+  emitParticles(numParticles) {
+    let emitted = 0;
+    for (let i = 0; i < this._numParticles && emitted < numParticles; ++i) {
+      if (this._particles[8 * i + 4] === 0 && this._particles[8 * i + 5] === 0) {
+        // Emit particles from the center with random velocities
+        const angle = Math.random() * Math.PI * 2;
+        const radius = 0.1;  // Emission radius from the center
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const velocity = {
+          x: (Math.random() * 2 - 1) * 0.1, // Random velocity
+          y: (Math.random() * 2 - 1) * 0.1
+        };
+        const lifespan = 5.0; // Set lifespan for emitted particles (5 seconds)
+        
+        // Update particle properties
+        this._particles[8 * i + 0] = x;  // position x (centered)
+        this._particles[8 * i + 1] = y;  // position y (centered)
+        this._particles[8 * i + 2] = velocity.x;  // initial velocity x
+        this._particles[8 * i + 3] = velocity.y;  // initial velocity y
+        this._particles[8 * i + 4] = velocity.x;  // velocity x
+        this._particles[8 * i + 5] = velocity.y;  // velocity y
+        this._particles[8 * i + 6] = lifespan; // Set lifespan
+        this._particles[8 * i + 7] = 0.0;  // Set age to 0
+        emitted++;  // Track number of emitted particles
+      }
+    }
+    
+    // Update buffers after emission
+    this._device.queue.writeBuffer(this._particleBuffers[this._step % 2], 0, this._particles);
+    this._device.queue.submit([]);  // Ensure buffer updates
+  }
+  
+  
+  
+  
 
+  update(dt) {
+    this._emissionTimer += dt;
+  
+    // Emit particles periodically
+    if (this._emissionTimer >= 1 / this._emissionRate) {
+      this.emitParticles(10);  // Emit 10 particles each frame
+      this._emissionTimer = 0;  // Reset the emission timer
+    }
+  
+    // Update the particles' positions, velocities, etc.
+    this.compute();
+  }
+  
+  
 
   async createShaders() {
     let shaderCode = await this.loadShader("/shaders/particles.wgsl");
@@ -74,16 +109,14 @@ export default class ParticleSystemObject extends SceneObject {
         code: shaderCode,
     });
 
-    // Compute pipeline bind group layout
+    // Define pipeline layout and bind groups
     this._computeBindGroupLayout = this._device.createBindGroupLayout({
       entries: [
           { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
           { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } }
       ]
-  });
-  
+    });
 
-    // Render pipeline bind group layout (read-only storage buffer)
     this._renderBindGroupLayout = this._device.createBindGroupLayout({
         entries: [
             { binding: 0, visibility: GPUShaderStage.VERTEX, buffer: { type: "read-only-storage" } }
@@ -121,65 +154,58 @@ export default class ParticleSystemObject extends SceneObject {
         layout: this._renderBindGroupLayout,
         entries: [{ binding: 0, resource: { buffer: this._particleBuffers[this._step % 2] } }]
     });
-}
+  }
 
+  async createRenderPipeline() {
+    this._renderPipeline = this._device.createRenderPipeline({
+        layout: this._renderPipelineLayout,
+        vertex: {
+            module: this._shaderModule,
+            entryPoint: "vertexMain",
+            buffers: [] // No vertex buffer needed, we use storage buffer instead
+        },
+        fragment: {
+            module: this._shaderModule,
+            entryPoint: "fragmentMain",
+            targets: [{ format: this._canvasFormat }]
+        },
+        primitive: { topology: "point-list" }
+    });
+  }
 
+  async createComputePipeline() {
+    this._computePipeline = this._device.createComputePipeline({
+        layout: this._computePipelineLayout,
+        compute: {
+            module: this._shaderModule,
+            entryPoint: "computeMain"
+        }
+    });
 
-async createRenderPipeline() {
-  this._renderPipeline = this._device.createRenderPipeline({
-      layout: this._renderPipelineLayout,
-      vertex: {
-          module: this._shaderModule,
-          entryPoint: "vertexMain",
-          buffers: [] // No vertex buffer needed, we use storage buffer instead
-      },
-      fragment: {
-          module: this._shaderModule,
-          entryPoint: "fragmentMain",
-          targets: [{ format: this._canvasFormat }]
-      },
-      primitive: { topology: "point-list" } // If using particles, point-list is likely needed
-  });
-}
-
-
-async createComputePipeline() {
-  this._computePipeline = this._device.createComputePipeline({
-      layout: this._computePipelineLayout,
-      compute: {
-          module: this._shaderModule,
-          entryPoint: "computeMain"
-      }
-  });
-
-  // Ensure compute bind groups are created with `storage` (read/write)
-  this._computeBindGroups = [
-      this._device.createBindGroup({
-          layout: this._computeBindGroupLayout,
-          entries: [
-              { binding: 0, resource: { buffer: this._particleBuffers[0] } },
-              { binding: 1, resource: { buffer: this._particleBuffers[1] } }
-          ]
-      }),
-      this._device.createBindGroup({
-          layout: this._computeBindGroupLayout,
-          entries: [
-              { binding: 0, resource: { buffer: this._particleBuffers[1] } },
-              { binding: 1, resource: { buffer: this._particleBuffers[0] } }
-          ]
-      })
-  ];
-}
-
-
+    // Ensure compute bind groups are created with `storage` (read/write)
+    this._computeBindGroups = [
+        this._device.createBindGroup({
+            layout: this._computeBindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: this._particleBuffers[0] } },
+                { binding: 1, resource: { buffer: this._particleBuffers[1] } }
+            ]
+        }),
+        this._device.createBindGroup({
+            layout: this._computeBindGroupLayout,
+            entries: [
+                { binding: 0, resource: { buffer: this._particleBuffers[1] } },
+                { binding: 1, resource: { buffer: this._particleBuffers[0] } }
+            ]
+        })
+    ];
+  }
 
   render(pass) {
     pass.setPipeline(this._renderPipeline);
     pass.setBindGroup(0, this._renderBindGroup);
     pass.draw(this._numParticles, this._numParticles);
-
   }
-
 
   compute(pass) {
     pass.setPipeline(this._computePipeline);
@@ -187,6 +213,4 @@ async createComputePipeline() {
     pass.dispatchWorkgroups(Math.ceil(this._numParticles / 256));
     this._step++;
   }
-
-
 }
