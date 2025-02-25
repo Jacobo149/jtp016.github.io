@@ -28,8 +28,76 @@ export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
     super(device, canvasFormat);
     // This assume each vertex has (x, y)
     this._cameraPose = cameraPose;
+    this._paused = false; // Add flag for paused state
+    this._speedFactor = 1.0; // Add speed factor for simulation speed
     if (typeof this._vertices === Float32Array) this._vertices = vertices; 
     else this._vertices = new Float32Array(vertices);
+
+
+    this._canvas = document.querySelector('canvas'); // Assuming you're using a canvas element
+    this._cellSize = 10; // Example size of each cell in the grid
+    this._gridWidth = 256; // Assuming 256 cells in width
+    this._gridHeight = 256; // Assuming 256 cells in height
+
+    // Initialize grid as dead (0 means dead, 1 means alive)
+    this._grid = new Array(this._gridWidth * this._gridHeight).fill(0);
+
+     // Event listener to toggle pause when "p" is pressed
+     window.addEventListener("keydown", (event) => {
+      if (event.key === "p") {
+        this.togglePause(); // Toggle pause when "p" is pressed
+      } else if (event.key === "t") {
+        this.speedUp(); // Speed up when "q" is pressed
+      } else if (event.key === "r") {
+        this.slowDown(); // Slow down when "r" is pressed
+      }
+    });
+
+    // Mouse click event listener
+    this._canvas.addEventListener('mousedown', (event) => this.onMouseDown(event));
+  }
+
+  // Speed up the simulation (increase speed factor)
+  speedUp() {
+    this._speedFactor *= 1.2; // Increase speed by 20%
+    console.log(`Simulation speed: ${this._speedFactor.toFixed(2)}x`);
+  }
+
+  // Slow down the simulation (decrease speed factor)
+  slowDown() {
+    this._speedFactor *= 0.8; // Decrease speed by 20%
+    console.log(`Simulation speed: ${this._speedFactor.toFixed(2)}x`);
+  }
+
+  onMouseDown(event) {
+    if (this._paused) return; // Do nothing if paused
+  
+    const rect = this._canvas.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+  
+    // Convert mouse position to grid coordinates
+    const gridX = Math.floor(mouseX / this._cellSize);
+    const gridY = Math.floor(mouseY / this._cellSize);
+  
+    // Make sure the click is within bounds of the grid
+    if (gridX >= 0 && gridX < this._gridWidth && gridY >= 0 && gridY < this._gridHeight) {
+      const index = gridY * this._gridWidth + gridX;
+  
+      // Set the clicked cell to alive (1)
+      if (this._grid[index] === 0) {
+        this._grid[index] = 1;
+        console.log(`Cell at (${gridX}, ${gridY}) turned alive.`);
+      }
+    }
+  }
+  
+
+
+   // Toggle the paused state
+   togglePause() {
+    this._paused = !this._paused;
+    console.log(`Simulation ${this._paused ? 'paused' : 'resumed'}`);
   }
   
   async createGeometry() {
@@ -60,7 +128,7 @@ export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
     // Copy from CPU to GPU
     this._device.queue.writeBuffer(this._cameraPoseBuffer, 0, this._cameraPose);
     // an array of cell statuses in CPU
-    this._cellStatus = new Uint32Array(10 * 10); 
+    this._cellStatus = new Uint32Array(256 * 256); 
 
     // Create a storage ping-pong-buffer to hold the cell status.
     this._cellStateBuffers = [
@@ -75,6 +143,7 @@ export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       })
     ];
+    
     // Copy from CPU to GPU
     this._device.queue.writeBuffer(this._cellStateBuffers[0], 0, this._cellStatus);
     // Set a step counter
@@ -170,11 +239,12 @@ export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
   }
   
   render(pass) {
+    if (this._paused) return; // Skip rendering if paused
     // add to render pass to draw the object
     pass.setPipeline(this._renderPipeline);      // which render pipeline to use
     pass.setVertexBuffer(0, this._vertexBuffer); // how the buffer are binded
     pass.setBindGroup(0, this._bindGroups[this._step % 2]);       // bind the uniform buffer
-    pass.draw(this._vertices.length / 2, 10 * 10);  // number of vertices to draw and number of instances to draw (100 here)
+    pass.draw(4, this._gridWidth * this._gridHeight); // For each grid cell  // number of vertices to draw and number of instances to draw (100 here)
   }
   
   async createComputePipeline() {
@@ -189,11 +259,15 @@ export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
     });
   }
   
-  compute(pass) { 
-    // add to compute pass
+  compute(pass) {
+    if (this._paused) return; // Skip computation if paused
+    const adjustedStep = Math.ceil(this._step * this._speedFactor);
+
     pass.setPipeline(this._computePipeline);
-    pass.setBindGroup(0, this._bindGroups[this._step % 2]);     // bind the uniform buffer
-    pass.dispatchWorkgroups(Math.ceil(10 / 4), Math.ceil(10 / 4)); // sending how many instances to compute for each work group
+    pass.setBindGroup(0, this._bindGroups[this._step % 2]);
+    pass.dispatchWorkgroups(Math.ceil(256 / 4), Math.ceil(256 / 4)); // Dispatch compute workgroup
     ++this._step;
+
+    console.log(`Simulation step: ${adjustedStep}`);
   }
 }
