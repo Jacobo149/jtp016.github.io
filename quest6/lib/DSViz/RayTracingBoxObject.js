@@ -16,7 +16,7 @@ export default class RayTracingBoxObject extends RayTracingObject {
       label: "Camera " + this.getName(),
       size: this._camera._pose.byteLength + this._camera._focal.byteLength + this._camera._resolutions.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    }); 
+    });
     this.updateCameraBuffer();
 
     this._boxBuffer = this._device.createBuffer({
@@ -73,23 +73,31 @@ export default class RayTracingBoxObject extends RayTracingObject {
     });
     this._bindGroupLayout = this._device.createBindGroupLayout({
       label: "Ray Trace Box Layout " + this.getName(),
-      entries: [{
-        binding: 0,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: {} 
-      }, {
-        binding: 1,
-        visibility: GPUShaderStage.COMPUTE,
-        buffer: {} 
-      }, {
-        binding: 2,
-        visibility: GPUShaderStage.COMPUTE,
-        storageTexture: { format: this._canvasFormat } 
-      }]
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {} 
+        },
+        {
+          binding: 1,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {} 
+        },
+        {
+          binding: 2,
+          visibility: GPUShaderStage.COMPUTE,
+          storageTexture: {
+            format: this._canvasFormat,
+            access: 'write-only',
+            viewDimension: '2d',
+          }
+        }
+      ]
     });
     this._pipelineLayout = this._device.createPipelineLayout({
       label: "Ray Trace Box Pipeline Layout",
-      bindGroupLayouts: [ this._bindGroupLayout ],
+      bindGroupLayouts: [this._bindGroupLayout],
     });
   }
 
@@ -117,18 +125,18 @@ export default class RayTracingBoxObject extends RayTracingObject {
       label: "Ray Trace Box Bind Group",
       layout: this._computePipeline.getBindGroupLayout(0),
       entries: [
-      {
-        binding: 0,
-        resource: { buffer: this._cameraBuffer }
-      },
-      {
-        binding: 1,
-        resource: { buffer: this._boxBuffer }
-      },
-      {
-        binding: 2,
-        resource: outTexture.createView()
-      }
+        {
+          binding: 0,
+          resource: { buffer: this._cameraBuffer }
+        },
+        {
+          binding: 1,
+          resource: { buffer: this._boxBuffer }
+        },
+        {
+          binding: 2,
+          resource: outTexture.createView({ format: 'rgba8unorm' })
+        }
       ],
     });
     this._wgWidth = Math.ceil(outTexture.width);
@@ -138,8 +146,7 @@ export default class RayTracingBoxObject extends RayTracingObject {
   compute(pass) {
     if (this._camera?._isProjective) {
       pass.setPipeline(this._computeProjectivePipeline);
-    }
-    else {
+    } else {
       pass.setPipeline(this._computePipeline);
     }
     pass.setBindGroup(0, this._bindGroup);
@@ -172,7 +179,7 @@ if (!navigator.gpu) {
       let outTexture = device.createTexture({
         size: { width: canvas.width, height: canvas.height, depthOrArrayLayers: 1 },
         format: 'rgba8unorm',
-        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE,
+        usage: GPUTextureUsage.STORAGE_BINDING, // Use STORAGE_BINDING only
       });
 
       // Keybinds for manipulating the camera
