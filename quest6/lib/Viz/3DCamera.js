@@ -21,8 +21,8 @@
  *                                anything the license permits.
  */
  
-import PGA3D from '/lib/Math/PGA3D.js'
- 
+import PGA3D from '/lib/Math/PGA3D.js';
+
 export default class Camera {
   constructor(width, height) {
     this._pose = new Float32Array(Array(16).fill(0));
@@ -48,50 +48,38 @@ export default class Camera {
   }
 
   moveX(d) {
-    // TODO: write code to move the camera in the x-direction
-    // Suggest to use PGA3D
-    
-    
+    let translation = PGA3D.translation(d, 0, 0);
+    let newpose = PGA3D.multiply(translation, this._pose);
     this.updatePose(newpose);
   }
   
   moveY(d) {
-    // TODO: write code to move the camera in the y-direction
-    // Suggest to use PGA3D
-    
-    
+    let translation = PGA3D.translation(0, d, 0);
+    let newpose = PGA3D.multiply(translation, this._pose);
     this.updatePose(newpose);
   }
   
   moveZ(d) {
-    // TODO: write code to move the camera in the z-direction
-    // Suggest to use PGA3D
-    
-    
+    let translation = PGA3D.translation(0, 0, d);
+    let newpose = PGA3D.multiply(translation, this._pose);
     this.updatePose(newpose);
   }
   
   rotateX(d) {
-    // TODO: write code to rotate the camera along its x-axis
-    // Suggest to use PGA3D
-    
-    
+    let rotation = PGA3D.rotation(d, 1, 0, 0);
+    let newpose = PGA3D.multiply(rotation, this._pose);
     this.updatePose(newpose);
   }
   
   rotateY(d) {
-    // TODO: write code to rotate the camera along its y-axis
-    // Suggest to use PGA3D
-    
-    
+    let rotation = PGA3D.rotation(d, 0, 1, 0);
+    let newpose = PGA3D.multiply(rotation, this._pose);
     this.updatePose(newpose);
   }
   
   rotateZ(d) {
-    // TODO: write code to rotate the camera along its z-axis
-    // Suggest to use PGA3D
-    
-    
+    let rotation = PGA3D.rotation(d, 0, 0, 1);
+    let newpose = PGA3D.multiply(rotation, this._pose);
     this.updatePose(newpose);
   }
 }

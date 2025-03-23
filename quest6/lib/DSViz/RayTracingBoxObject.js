@@ -1,28 +1,6 @@
-/*!
- * Copyright (c) 2025 SingChun LEE @ Bucknell University. CC BY-NC 4.0.
- * 
- * This code is provided mainly for educational purposes at Bucknell University.
- *
- * This code is licensed under the Creative Commons Attribution-NonCommerical 4.0
- * International License. To view a copy of the license, visit 
- *   https://creativecommons.org/licenses/by-nc/4.0/
- * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
- *
- * You are free to:
- *  - Share: copy and redistribute the material in any medium or format.
- *  - Adapt: remix, transform, and build upon the material.
- *
- * Under the following terms:
- *  - Attribution: You must give appropriate credit, provide a link to the license,
- *                 and indicate if changes where made.
- *  - NonCommerical: You may not use the material for commerical purposes.
- *  - No additional restrictions: You may not apply legal terms or technological 
- *                                measures that legally restrict others from doing
- *                                anything the license permits.
- */
-
-import RayTracingObject from "/lib/DSViz/RayTracingObject.js"
-import UnitCube from "/lib/DS/UnitCube.js"
+import RayTracingObject from "/lib/DSViz/RayTracingObject.js";
+import UnitCube from "/lib/DS/UnitCube.js";
+import Camera from "/lib/Viz/3DCamera.js";
 
 export default class RayTracingBoxObject extends RayTracingObject {
   constructor(device, canvasFormat, camera, showTexture = true) {
@@ -30,29 +8,32 @@ export default class RayTracingBoxObject extends RayTracingObject {
     this._box = new UnitCube();
     this._camera = camera;
     this._showTexture = showTexture;
+    this._device = device;
   }
-  
+
   async createGeometry() {
-    // Create camera buffer to store the camera pose and scale in GPU
     this._cameraBuffer = this._device.createBuffer({
       label: "Camera " + this.getName(),
       size: this._camera._pose.byteLength + this._camera._focal.byteLength + this._camera._resolutions.byteLength,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     }); 
-    // Copy from CPU to GPU - both pose and scales
-    this._device.queue.writeBuffer(this._cameraBuffer, 0, this._camera._pose);
-    this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength, this._camera._focal);
-    this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength + this._camera._focal.byteLength, this._camera._resolutions);
-    // 
-    // Create box buffer to store the box in GPU
-    // Note, here we combine all the information in one buffer
+    this.updateCameraBuffer();
+
     this._boxBuffer = this._device.createBuffer({
       label: "Box " + this.getName(),
       size: this._box._pose.byteLength + this._box._scales.byteLength + this._box._top.byteLength * 6,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    // Copy from CPU to GPU
-    // Note, here we make use of the offset to copy them over one by one
+    this.updateBoxBuffer();
+  }
+
+  updateCameraBuffer() {
+    this._device.queue.writeBuffer(this._cameraBuffer, 0, this._camera._pose);
+    this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength, this._camera._focal);
+    this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength + this._camera._focal.byteLength, this._camera._resolutions);
+  }
+
+  updateBoxBuffer() {
     let offset = 0;
     this._device.queue.writeBuffer(this._boxBuffer, offset, this._box._pose);
     offset += this._box._pose.byteLength;
@@ -70,25 +51,16 @@ export default class RayTracingBoxObject extends RayTracingObject {
     offset += this._box._top.byteLength;
     this._device.queue.writeBuffer(this._boxBuffer, offset, this._box._down);
   }
-  
+
   updateGeometry() {
-    // update the image size of the camera
     this._camera.updateSize(this._imgWidth, this._imgHeight);
-    this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength + this._camera._focal.byteLength, this._camera._resolutions);
+    this.updateCameraBuffer();
   }
-  
-  updateBoxPose() {
-    this._device.queue.writeBuffer(this._boxBuffer, 0, this._box._pose);
-  }
-  
-  updateBoxScales() {
-    this._device.queue.writeBuffer(this._boxBuffer, this._box._pose.byteLength, this._box._scales);
-  }
-  
+
   updateCameraPose() {
     this._device.queue.writeBuffer(this._cameraBuffer, 0, this._camera._pose);
   }
-  
+
   updateCameraFocal() {
     this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength, this._camera._focal);
   }
@@ -99,21 +71,20 @@ export default class RayTracingBoxObject extends RayTracingObject {
       label: " Shader " + this.getName(),
       code: shaderCode,
     });
-    // Create the bind group layout
     this._bindGroupLayout = this._device.createBindGroupLayout({
       label: "Ray Trace Box Layout " + this.getName(),
       entries: [{
         binding: 0,
         visibility: GPUShaderStage.COMPUTE,
-        buffer: {} // Camera uniform buffer
+        buffer: {} 
       }, {
         binding: 1,
         visibility: GPUShaderStage.COMPUTE,
-        buffer: {} // Box uniform buffer
+        buffer: {} 
       }, {
         binding: 2,
         visibility: GPUShaderStage.COMPUTE,
-        storageTexture: { format: this._canvasFormat } // texture
+        storageTexture: { format: this._canvasFormat } 
       }]
     });
     this._pipelineLayout = this._device.createPipelineLayout({
@@ -121,9 +92,8 @@ export default class RayTracingBoxObject extends RayTracingObject {
       bindGroupLayouts: [ this._bindGroupLayout ],
     });
   }
-  
+
   async createComputePipeline() {
-    // Create a compute pipeline that updates the image.
     this._computePipeline = this._device.createComputePipeline({
       label: "Ray Trace Box Orthogonal Pipeline " + this.getName(),
       layout: this._pipelineLayout,
@@ -132,7 +102,6 @@ export default class RayTracingBoxObject extends RayTracingObject {
         entryPoint: "computeOrthogonalMain",
       }
     });
-    // Create a compute pipeline that updates the image.
     this._computeProjectivePipeline = this._device.createComputePipeline({
       label: "Ray Trace Box Projective Pipeline " + this.getName(),
       layout: this._pipelineLayout,
@@ -144,7 +113,6 @@ export default class RayTracingBoxObject extends RayTracingObject {
   }
 
   createBindGroup(outTexture) {
-    // Create a bind group
     this._bindGroup = this._device.createBindGroup({
       label: "Ray Trace Box Bind Group",
       layout: this._computePipeline.getBindGroupLayout(0),
@@ -166,16 +134,112 @@ export default class RayTracingBoxObject extends RayTracingObject {
     this._wgWidth = Math.ceil(outTexture.width);
     this._wgHeight = Math.ceil(outTexture.height);
   }
-  
+
   compute(pass) {
-    // add to compute pass
     if (this._camera?._isProjective) {
-      pass.setPipeline(this._computeProjectivePipeline);        // set the compute projective pipeline
+      pass.setPipeline(this._computeProjectivePipeline);
     }
     else {
-      pass.setPipeline(this._computePipeline);                 // set the compute orthogonal pipeline
+      pass.setPipeline(this._computePipeline);
     }
-    pass.setBindGroup(0, this._bindGroup);                  // bind the buffer
-    pass.dispatchWorkgroups(Math.ceil(this._wgWidth / 16), Math.ceil(this._wgHeight / 16)); // dispatch
+    pass.setBindGroup(0, this._bindGroup);
+    pass.dispatchWorkgroups(Math.ceil(this._wgWidth / 16), Math.ceil(this._wgHeight / 16));
+  }
+}
+
+// Initialize the scene with a canvas
+let canvas = document.getElementById("renderCanvas"); // Your rendering canvas element
+
+// Check if WebGPU is supported
+if (!navigator.gpu) {
+  console.error("WebGPU is not supported in this browser.");
+} else {
+  try {
+    const adapter = await navigator.gpu.requestAdapter(); // Request an adapter
+    if (!adapter) {
+      console.error("Failed to get a WebGPU adapter.");
+    } else {
+      const device = await adapter.requestDevice(); // Request a device
+      let camera = new Camera(canvas.width, canvas.height); // Your custom Camera class
+      let rayTracingBox = new RayTracingBoxObject(device, 'rgba8unorm', camera);
+
+      // Create the geometry and shaders for the box
+      await rayTracingBox.createGeometry();
+      await rayTracingBox.createShaders();
+      await rayTracingBox.createComputePipeline();
+
+      // Create an output texture (adjust the size and format as needed)
+      let outTexture = device.createTexture({
+        size: { width: canvas.width, height: canvas.height, depthOrArrayLayers: 1 },
+        format: 'rgba8unorm',
+        usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.STORAGE,
+      });
+
+      // Keybinds for manipulating the camera
+      document.addEventListener('keydown', (event) => {
+        const speed = 0.1; // Movement speed
+        switch (event.key) {
+          case 'w': // Move forward
+            camera.moveZ(speed);
+            break;
+          case 's': // Move backward
+            camera.moveZ(-speed);
+            break;
+          case 'a': // Move left
+            camera.moveX(-speed);
+            break;
+          case 'd': // Move right
+            camera.moveX(speed);
+            break;
+          case 'q': // Rotate left
+            camera.rotateY(-Math.PI / 30); // Rotate 6 degrees left
+            break;
+          case 'e': // Rotate right
+            camera.rotateY(Math.PI / 30); // Rotate 6 degrees right
+            break;
+          case 'r': // Rotate up
+            camera.rotateX(Math.PI / 30); // Rotate 6 degrees up
+            break;
+          case 'f': // Rotate down
+            camera.rotateX(-Math.PI / 30); // Rotate 6 degrees down
+            break;
+          default:
+            break;
+        }
+
+        // Update the camera pose and geometry after key press
+        rayTracingBox.updateCameraPose();
+        rayTracingBox.updateBoxPose(); // Optionally update the box pose
+      });
+
+      // Render loop for animation
+      function animate() {
+        // Update the geometry if necessary
+        rayTracingBox.updateGeometry();
+
+        // Create the bind group using the output texture
+        rayTracingBox.createBindGroup(outTexture);
+
+        // Set up the rendering pass
+        const passEncoder = device.createCommandEncoder();
+        let pass = passEncoder.beginRenderPass({
+          colorAttachments: [{
+            view: outTexture.createView(),
+            loadOp: 'clear',
+            storeOp: 'store',
+            clearColor: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
+          }],
+        });
+        rayTracingBox.compute(pass);
+        device.queue.submit([passEncoder.finish()]);
+
+        requestAnimationFrame(animate);
+      }
+
+      // Start the animation loop
+      animate();
+    }
+  } catch (error) {
+    console.error("Error initializing WebGPU: ", error);
   }
 }

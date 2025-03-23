@@ -36,6 +36,15 @@ async function init() {
   const canvasTag = document.createElement('canvas');
   canvasTag.id = "renderCanvas";
   document.body.appendChild(canvasTag);
+
+  // Wait for the canvas to be added to the DOM and initialized
+  const canvas = document.getElementById("renderCanvas");
+   // Ensure the canvas size is set before any WebGPU initialization
+   canvas.width = window.innerWidth;  // Adjust the width as necessary
+   canvas.height = window.innerHeight;  // Adjust the height as necessary
+
+   console.log(canvas.width, canvas.height);
+
   // Create a ray tracer
   const tracer = new RayTracer(canvasTag);
   await tracer.init();
