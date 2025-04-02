@@ -24,11 +24,14 @@
 import PGA3D from '/lib/Math/PGA3D.js';
 
 export default class Camera {
+  
   constructor(width, height) {
     this._pose = new Float32Array(Array(16).fill(0));
     this._pose[0] = 1;
     this._focal = new Float32Array(Array(2).fill(1));
     this._resolutions = new Float32Array([width, height]);
+    this.move_speed = 1;
+    this.rotation_speed = 1;
   }
   
   resetPose() {
@@ -48,38 +51,64 @@ export default class Camera {
   }
 
   moveX(d) {
-    let translation = PGA3D.translation(d, 0, 0);
-    let newpose = PGA3D.multiply(translation, this._pose);
+    let dt = PGA3D.createTranslator(d, 0, 0);
+    let newpose = PGA3D.geometricProduct(dt, this._pose);
     this.updatePose(newpose);
-  }
-  
-  moveY(d) {
-    let translation = PGA3D.translation(0, d, 0);
-    let newpose = PGA3D.multiply(translation, this._pose);
+}
+
+moveY(d) {
+    let dt = PGA3D.createTranslator(0, d, 0);
+    let newpose = PGA3D.geometricProduct(dt, this._pose);
     this.updatePose(newpose);
-  }
-  
-  moveZ(d) {
-    let translation = PGA3D.translation(0, 0, d);
-    let newpose = PGA3D.multiply(translation, this._pose);
+}
+
+moveZ(d) {
+    let dt = PGA3D.createTranslator(0, 0, d);
+    let newpose = PGA3D.geometricProduct(dt, this._pose);
     this.updatePose(newpose);
-  }
+}
+
   
   rotateX(d) {
-    let rotation = PGA3D.rotation(d, 1, 0, 0);
-    let newpose = PGA3D.multiply(rotation, this._pose);
+    // TODO: write code to rotate the camera along its x-axis
+    // Suggest to use PGA3D
+    let angle = Math.PI / 2 * d /100; // d represents what percent of a whole rotation we turn
+    var direction = PGA3D.applyMotorToDir([1, 0, 0], this._pose);
+    var cameraLocation = PGA3D.applyMotorToPoint([0, 0, 0], this._pose);
+    let dr = PGA3D.createRotor(angle, direction[0], direction[1], direction[2], cameraLocation[0], cameraLocation[1], cameraLocation[2]);
+    var newpose = PGA3D.geometricProduct(dr, this._pose);
     this.updatePose(newpose);
   }
   
   rotateY(d) {
-    let rotation = PGA3D.rotation(d, 0, 1, 0);
-    let newpose = PGA3D.multiply(rotation, this._pose);
+    // TODO: write code to rotate the camera along its y-axis
+    // Suggest to use PGA3D
+    let angle = Math.PI / 2 * d /100; // d represents what percent of a whole rotation we turn
+    var direction = PGA3D.applyMotorToDir([0, 1, 0], this._pose);
+    var cameraLocation = PGA3D.applyMotorToPoint([0, 0, 0], this._pose);
+    let dr = PGA3D.createRotor(angle, direction[0], direction[1], direction[2], cameraLocation[0], cameraLocation[1], cameraLocation[2]);
+    var newpose = PGA3D.geometricProduct(dr, this._pose);
     this.updatePose(newpose);
   }
   
   rotateZ(d) {
-    let rotation = PGA3D.rotation(d, 0, 0, 1);
-    let newpose = PGA3D.multiply(rotation, this._pose);
+    // TODO: write code to rotate the camera along its z-axis
+    // Suggest to use PGA3D
+    let angle = Math.PI / 2 * d /100; // d represents what percent of a whole rotation we turn
+    var direction = PGA3D.applyMotorToDir([0, 0, 1], this._pose);
+    var cameraLocation = PGA3D.applyMotorToPoint([0, 0, 0], this._pose);
+    let dr = PGA3D.createRotor(angle, direction[0], direction[1], direction[2], cameraLocation[0], cameraLocation[1], cameraLocation[2]);
+    var newpose = PGA3D.geometricProduct(dr, this._pose);
     this.updatePose(newpose);
+  }
+
+  changeFocal(delta){
+    this._focal[0] += delta;
+    this._focal[1] += delta;
+    console.log("new focal: " + this._focal);
+  }
+
+  toggleCameraType(){
+    this._isProjective = !this._isProjective;
   }
 }

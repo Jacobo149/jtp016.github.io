@@ -36,8 +36,7 @@ async function init() {
   const canvasTag = document.createElement('canvas');
   canvasTag.id = "renderCanvas";
   document.body.appendChild(canvasTag);
-
-  // Wait for the canvas to be added to the DOM and initialized
+  await new Promise(resolve => setTimeout(resolve, 100));  // Give the DOM time to update
   const canvas = document.getElementById("renderCanvas");
    // Ensure the canvas size is set before any WebGPU initialization
    canvas.width = window.innerWidth;  // Adjust the width as necessary
@@ -51,7 +50,13 @@ async function init() {
   // Create a 3D Camera
   var camera = new Camera();
   // Create an object to trace
-  var tracerObj = new RayTracingBoxObject(tracer._device, tracer._canvasFormat, camera);
+
+  if (!canvas) {
+    console.error("renderCanvas element not found in the DOM.");
+  }
+  console.log("Canvas before passing to RayTracingBoxObject:", canvas); // Check if it's null
+
+  var tracerObj = new RayTracingBoxObject(tracer._device, tracer._canvasFormat, camera, true, canvas);
   await tracer.setTracerObject(tracerObj);
   
   let fps = '??';

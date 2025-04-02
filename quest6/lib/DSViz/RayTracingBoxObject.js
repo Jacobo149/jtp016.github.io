@@ -3,12 +3,17 @@ import UnitCube from "/lib/DS/UnitCube.js";
 import Camera from "/lib/Viz/3DCamera.js";
 
 export default class RayTracingBoxObject extends RayTracingObject {
-  constructor(device, canvasFormat, camera, showTexture = true) {
+  constructor(device, canvasFormat, camera, showTexture = true, canvas) {
     super(device, canvasFormat);
     this._box = new UnitCube();
     this._camera = camera;
     this._showTexture = showTexture;
     this._device = device;
+    this._canvas = canvas || document.getElementById("renderCanvas");
+
+    if (!this._canvas) {
+      throw new Error("Canvas is undefined in RayTracingBoxObject constructor.");
+    }
   }
 
   async createGeometry() {
@@ -53,17 +58,10 @@ export default class RayTracingBoxObject extends RayTracingObject {
   }
 
   updateGeometry() {
-    this._camera.updateSize(this._imgWidth, this._imgHeight);
+    this._camera.updateSize(this._canvas.width, this._canvas.height);  // Use canvas dimensions
     this.updateCameraBuffer();
   }
 
-  updateCameraPose() {
-    this._device.queue.writeBuffer(this._cameraBuffer, 0, this._camera._pose);
-  }
-
-  updateCameraFocal() {
-    this._device.queue.writeBuffer(this._cameraBuffer, this._camera._pose.byteLength, this._camera._focal);
-  }
 
   async createShaders() {
     let shaderCode = await this.loadShader("/shaders/tracebox.wgsl");
@@ -74,25 +72,9 @@ export default class RayTracingBoxObject extends RayTracingObject {
     this._bindGroupLayout = this._device.createBindGroupLayout({
       label: "Ray Trace Box Layout " + this.getName(),
       entries: [
-        {
-          binding: 0,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: {} 
-        },
-        {
-          binding: 1,
-          visibility: GPUShaderStage.COMPUTE,
-          buffer: {} 
-        },
-        {
-          binding: 2,
-          visibility: GPUShaderStage.COMPUTE,
-          storageTexture: {
-            format: this._canvasFormat,
-            access: 'write-only',
-            viewDimension: '2d',
-          }
-        }
+        { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: {} },
+        { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: {} },
+        { binding: 2, visibility: GPUShaderStage.COMPUTE, storageTexture: { format: this._canvasFormat, access: 'write-only', viewDimension: '2d' }}
       ]
     });
     this._pipelineLayout = this._device.createPipelineLayout({
@@ -125,18 +107,9 @@ export default class RayTracingBoxObject extends RayTracingObject {
       label: "Ray Trace Box Bind Group",
       layout: this._computePipeline.getBindGroupLayout(0),
       entries: [
-        {
-          binding: 0,
-          resource: { buffer: this._cameraBuffer }
-        },
-        {
-          binding: 1,
-          resource: { buffer: this._boxBuffer }
-        },
-        {
-          binding: 2,
-          resource: outTexture.createView({ format: 'rgba8unorm' })
-        }
+        { binding: 0, resource: { buffer: this._cameraBuffer }},
+        { binding: 1, resource: { buffer: this._boxBuffer }},
+        { binding: 2, resource: outTexture.createView({ format: 'rgba8unorm' })}
       ],
     });
     this._wgWidth = Math.ceil(outTexture.width);
@@ -144,109 +117,96 @@ export default class RayTracingBoxObject extends RayTracingObject {
   }
 
   compute(pass) {
-    if (this._camera?._isProjective) {
-      pass.setPipeline(this._computeProjectivePipeline);
-    } else {
-      pass.setPipeline(this._computePipeline);
-    }
+    const pipeline = this._camera._isProjective ? this._computeProjectivePipeline : this._computePipeline;
+    pass.setPipeline(pipeline);
     pass.setBindGroup(0, this._bindGroup);
     pass.dispatchWorkgroups(Math.ceil(this._wgWidth / 16), Math.ceil(this._wgHeight / 16));
   }
 }
 
-// Initialize the scene with a canvas
-let canvas = document.getElementById("renderCanvas"); // Your rendering canvas element
+document.addEventListener("DOMContentLoaded", async () => {
+  if (!navigator.gpu) {
+    console.error("WebGPU is not supported in this browser.");
+    return;
+  }
 
-// Check if WebGPU is supported
-if (!navigator.gpu) {
-  console.error("WebGPU is not supported in this browser.");
-} else {
   try {
-    const adapter = await navigator.gpu.requestAdapter(); // Request an adapter
+    const canvas = document.getElementById("renderCanvas");
+    if (!canvas) {
+      console.error("Canvas element not found.");
+      return;
+    }
+
+    console.log("Canvas in WebGPU initialization:", canvas);
+
+    const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) {
       console.error("Failed to get a WebGPU adapter.");
-    } else {
-      const device = await adapter.requestDevice(); // Request a device
-      let camera = new Camera(canvas.width, canvas.height); // Your custom Camera class
-      let rayTracingBox = new RayTracingBoxObject(device, 'rgba8unorm', camera);
-
-      // Create the geometry and shaders for the box
-      await rayTracingBox.createGeometry();
-      await rayTracingBox.createShaders();
-      await rayTracingBox.createComputePipeline();
-
-      // Create an output texture (adjust the size and format as needed)
-      let outTexture = device.createTexture({
-        size: { width: canvas.width, height: canvas.height, depthOrArrayLayers: 1 },
-        format: 'rgba8unorm',
-        usage: GPUTextureUsage.STORAGE_BINDING, // Use STORAGE_BINDING only
-      });
-
-      // Keybinds for manipulating the camera
-      document.addEventListener('keydown', (event) => {
-        const speed = 0.1; // Movement speed
-        switch (event.key) {
-          case 'w': // Move forward
-            camera.moveZ(speed);
-            break;
-          case 's': // Move backward
-            camera.moveZ(-speed);
-            break;
-          case 'a': // Move left
-            camera.moveX(-speed);
-            break;
-          case 'd': // Move right
-            camera.moveX(speed);
-            break;
-          case 'q': // Rotate left
-            camera.rotateY(-Math.PI / 30); // Rotate 6 degrees left
-            break;
-          case 'e': // Rotate right
-            camera.rotateY(Math.PI / 30); // Rotate 6 degrees right
-            break;
-          case 'r': // Rotate up
-            camera.rotateX(Math.PI / 30); // Rotate 6 degrees up
-            break;
-          case 'f': // Rotate down
-            camera.rotateX(-Math.PI / 30); // Rotate 6 degrees down
-            break;
-          default:
-            break;
-        }
-
-        // Update the camera pose and geometry after key press
-        rayTracingBox.updateCameraPose();
-        rayTracingBox.updateBoxPose(); // Optionally update the box pose
-      });
-
-      // Render loop for animation
-      function animate() {
-        // Update the geometry if necessary
-        rayTracingBox.updateGeometry();
-
-        // Create the bind group using the output texture
-        rayTracingBox.createBindGroup(outTexture);
-
-        // Set up the rendering pass
-        const passEncoder = device.createCommandEncoder();
-        let pass = passEncoder.beginRenderPass({
-          colorAttachments: [{
-            view: outTexture.createView(),
-            loadOp: 'clear',
-            storeOp: 'store',
-            clearColor: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 }
-          }],
-        });
-        rayTracingBox.compute(pass);
-        device.queue.submit([passEncoder.finish()]);
-
-        requestAnimationFrame(animate);
-      }
-
-      // Start the animation loop
-      animate();
+      return;
     }
+
+    const device = await adapter.requestDevice();
+    const camera = new Camera(canvas.width, canvas.height);
+    const rayTracingBox = new RayTracingBoxObject(device, 'rgba8unorm', camera, true, canvas);
+
+    await rayTracingBox.createGeometry();
+    await rayTracingBox.createShaders();
+    await rayTracingBox.createComputePipeline();
+
+    const outTexture = device.createTexture({
+      size: { width: canvas.width, height: canvas.height, depthOrArrayLayers: 1 },
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.STORAGE_BINDING | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+
+    document.addEventListener('keydown', (event) => {
+      console.log("Key pressed:", event.key); // Debugging output
+      const speed = 0.1;
+      switch (event.key) {
+        case 'w': camera.moveZ(speed); break;
+        case 's': camera.moveZ(-speed); break;
+        case 'a': camera.moveX(-speed); break;
+        case 'd': camera.moveX(speed); break;
+        case 'q': camera.rotateY(-Math.PI / 30); break;
+        case 'e': camera.rotateY(Math.PI / 30); break;
+        case 'r': camera.rotateX(Math.PI / 30); break;
+        case 'f': camera.rotateX(-Math.PI / 30); break;
+        default: break;
+      }
+      console.log("Camera pose updated:", camera._pose); // Debugging output
+      rayTracingBox.updateCameraBuffer();
+    });
+
+    function animate() {
+      rayTracingBox.updateGeometry();
+      rayTracingBox.createBindGroup(outTexture);
+      
+      const passEncoder = device.createCommandEncoder();
+      
+      // Use compute pass encoder instead of render pass encoder
+      const computePass = passEncoder.beginComputePass();
+      
+      // Set the compute pipeline
+      const pipeline = rayTracingBox._camera._isProjective ? rayTracingBox._computeProjectivePipeline : rayTracingBox._computePipeline;
+      computePass.setPipeline(pipeline);
+      computePass.setBindGroup(0, rayTracingBox._bindGroup);
+      
+      // Dispatch compute workgroups
+      computePass.dispatchWorkgroups(Math.ceil(rayTracingBox._wgWidth / 16), Math.ceil(rayTracingBox._wgHeight / 16));
+      
+      // End the compute pass correctly
+      computePass.end();
+      device.queue.submit([passEncoder.finish()]);
+      
+      requestAnimationFrame(animate);
+    }
+    
+    
+
+    animate();
+
   } catch (error) {
     console.error("Error initializing WebGPU: ", error);
   }
-}
+});
+
