@@ -32,6 +32,7 @@ export default class Camera {
     this._resolutions = new Float32Array([width, height]);
     this.move_speed = 1;
     this.rotation_speed = 1;
+    this._isProjective = false;
   }
   
   resetPose() {
