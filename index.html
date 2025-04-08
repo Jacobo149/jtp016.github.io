@@ -1,27 +1,78 @@
 <!DOCTYPE html>
-<!-- Comments in HTML is enclosed by these -->
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>WebGPU Practice</title>
-  <!-- Note that some header tags don't need a close tag. They don't have content, called "void" tags. meta is one of them. -->
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-  <!-- Import CSS uisng the link tag -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="./alien_abduction_icon-icons.com_60295.ico" type="image/x-icon">
   <link rel="stylesheet" type="text/css" href="./styles.css">
-  <!-- Webpage icon -->
-  <link rel="icon" href=".\alien_abduction_icon-icons.com_60295.ico" type="image/x-icon">
-  <!-- Include the web app script -->
-  <!--<script type="module" src="./webgpu_nonobfuscated.js"></script>-->
-  <ul>
-    <li><a href="quest1/quest1-starter.html">Quest 1</a></li>
-    <li><a href="quest2/quest2-starter.html">Quest 2</a></li>
-    <li><a href="quest3/quest3-starter.html">Quest 3</a></li>
-    <li><a href="quest4/quest4-starter.html">Quest 4</a></li>
-    <li><a href="quest5/quest5-starter.html">Quest 5</a></li>
-    <li><a href="quest6/quest6-starter.html">Quest 6</a></li>
-    <li><a href="quest8/quest8-starter.html">Quest 8</a></li>
-  </ul>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #1e1e2f;
+      color: #f0f0f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #2a2a40;
+      padding: 2rem 3rem;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      text-align: center;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    h1 {
+      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      color: #90cdf4;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    li {
+      margin: 0.5rem 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: #f0f0f0;
+      background: #4f46e5;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+      display: inline-block;
+      width: 100%;
+    }
+
+    a:hover {
+      background: #6366f1;
+    }
+  </style>
 </head>
-<body></body>
+<body>
+  <div class="container">
+    <h1>WebGPU Quests</h1>
+    <ul>
+      <li><a href="quest1/quest1-starter.html">Quest 1</a></li>
+      <li><a href="quest2/quest2-starter.html">Quest 2</a></li>
+      <li><a href="quest3/quest3-starter.html">Quest 3</a></li>
+      <li><a href="quest4/quest4-starter.html">Quest 4</a></li>
+      <li><a href="quest5/quest5-starter.html">Quest 5</a></li>
+      <li><a href="quest6/quest6-starter.html">Quest 6</a></li>
+      <li><a href="quest8/quest8-starter.html">Quest 8</a></li>
+    </ul>
+  </div>
+</body>
 </html>
