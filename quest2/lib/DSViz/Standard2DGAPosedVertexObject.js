@@ -65,7 +65,7 @@ export default class Standard2DGAPosedVertexObject extends SceneObject {
   }
   
   async createShaders() {
-    let shaderCode = await this.loadShader("/shaders/standard2dga.wgsl");
+    let shaderCode = await this.loadShader("./shaders/standard2dga.wgsl");
     this._shaderModule = this._device.createShaderModule({
       label: " Shader " + this.getName(),
       code: shaderCode,

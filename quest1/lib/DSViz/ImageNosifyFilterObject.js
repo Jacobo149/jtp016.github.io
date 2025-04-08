@@ -1,4 +1,4 @@
-import ImageFilterObject from "/lib/DSViz/ImageFilterObject.js";
+import ImageFilterObject from "./ImageFilterObject.js";
 
 export default class ImageNosifyFilterObject extends ImageFilterObject {
     async createGeometry() {

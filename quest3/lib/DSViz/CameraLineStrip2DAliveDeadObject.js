@@ -21,7 +21,7 @@
  *                                anything the license permits.
  */
 
-import SceneObject from "/lib/DSViz/SceneObject.js"
+import SceneObject from "./SceneObject.js"
 
 export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
   constructor(device, canvasFormat, cameraPose, vertices) {
@@ -155,7 +155,7 @@ export default class CameraLineStrip2DAliveDeadObject extends SceneObject {
   }
   
   async createShaders() {
-    let shaderCode = await this.loadShader("/shaders/camera2dalivedead.wgsl");
+    let shaderCode = await this.loadShader("./shaders/camera2dalivedead.wgsl");
     this._shaderModule = this._device.createShaderModule({
       label: " Shader " + this.getName(),
       code: shaderCode,

@@ -26,9 +26,9 @@
 // Chrome & Edge 113+ : Enable Vulkan, Default ANGLE Vulkan, Vulkan from ANGLE, Unsafe WebGPU Support, and WebGPU Developer Features (if exsits)
 // Firefox Nightly: sudo snap install firefox --channel=latext/edge or download from https://www.mozilla.org/en-US/firefox/channel/desktop/
 
-import Renderer from '/lib/Viz/2DRenderer.js'
-import PolygonObject from '/lib/DSViz/PolygonObject.js'
-import StandardTextObject from '/lib/DSViz/StandardTextObject.js'
+import Renderer from './lib/Viz/2DRenderer.js'
+import PolygonObject from './lib/DSViz/PolygonObject.js'
+import StandardTextObject from './lib/DSViz/StandardTextObject.js'
 
 async function init() {
   // Create a canvas tag
@@ -38,7 +38,7 @@ async function init() {
   // Create a 2d animated renderer
   const renderer = new Renderer(canvasTag);
   await renderer.init();
-  const polygon = new PolygonObject(renderer._device, renderer._canvasFormat, '/assets/box.polygon', renderer._canvas);
+  const polygon = new PolygonObject(renderer._device, renderer._canvasFormat, './assets/box.polygon', renderer._canvas);
   await renderer.appendSceneObject(polygon);
   let fps = '??';
   var fpsText = new StandardTextObject('fps: ' + fps);

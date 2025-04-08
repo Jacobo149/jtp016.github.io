@@ -1,4 +1,4 @@
-import SceneObject from "/lib/DSViz/SceneObject.js"
+import SceneObject from "./SceneObject.js"
 
 export default class ImageFilterObject extends SceneObject {
   async createGeometry() {}

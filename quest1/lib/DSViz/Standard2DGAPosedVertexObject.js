@@ -1,4 +1,4 @@
-import SceneObject from "/lib/DSViz/SceneObject.js"
+import SceneObject from "./SceneObject.js"
 
 
 export default class Standard2DGAPosedVertexObject extends SceneObject {
@@ -43,7 +43,7 @@ export default class Standard2DGAPosedVertexObject extends SceneObject {
     }
   
     async createShaders() {
-      let shaderCode = await this.loadShader("/shaders/2DGAPoseshader.wgsl");
+      let shaderCode = await this.loadShader("/quest1/shaders/2DGAPoseshader.wgsl");
       this._shaderModule = this._device.createShaderModule({
         label: " Shader " + this.getName(),
         code: shaderCode,

@@ -26,11 +26,11 @@
 // Chrome & Edge 113+ : Enable Vulkan, Default ANGLE Vulkan, Vulkan from ANGLE, Unsafe WebGPU Support, and WebGPU Developer Features (if exsits)
 // Firefox Nightly: sudo snap install firefox --channel=latext/edge or download from https://www.mozilla.org/en-US/firefox/channel/desktop/
 
-import RayTracer from '/lib/Viz/RayTracer.js'
-import StandardTextObject from '/lib/DSViz/StandardTextObject.js'
-import RayTracingBoxLightObject from '/lib/DSViz/RayTracingBoxLightObject.js'
-import Camera from '/lib/Viz/3DCamera.js'
-import PointLight from '/lib/Viz/PointLight.js'
+import RayTracer from './lib/Viz/RayTracer.js'
+import StandardTextObject from './lib/DSViz/StandardTextObject.js'
+import RayTracingBoxLightObject from './lib/DSViz/RayTracingBoxLightObject.js'
+import Camera from './lib/Viz/3DCamera.js'
+import PointLight from './lib/Viz/PointLight.js'
 
 async function init() {
   // Create a canvas tag

@@ -1,7 +1,7 @@
-import RayTracer from '/lib/Viz/RayTracer.js';
-import StandardTextObject from '/lib/DSViz/StandardTextObject.js';
-import RayTracingBoxObject from '/lib/DSViz/RayTracingBoxObject.js';
-import Camera from '/lib/Viz/3DCamera.js';
+import RayTracer from './lib/Viz/RayTracer.js';
+import StandardTextObject from './lib/DSViz/StandardTextObject.js';
+import RayTracingBoxObject from './lib/DSViz/RayTracingBoxObject.js';
+import Camera from './lib/Viz/3DCamera.js';
 
 async function init() {
   const canvasTag = document.createElement('canvas');

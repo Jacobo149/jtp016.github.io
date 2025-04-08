@@ -1,5 +1,5 @@
-import RayTracingObject from "/lib/DSViz/RayTracingObject.js";
-import UnitCube from "/lib/DS/UnitCube.js";
+import RayTracingObject from "./RayTracingObject.js";
+import UnitCube from "../DS/UnitCube.js";
 
 export default class RayTracingBoxObject extends RayTracingObject {
   constructor(device, canvasFormat, camera, showTexture = true) {
@@ -80,7 +80,7 @@ export default class RayTracingBoxObject extends RayTracingObject {
   }
 
   async createShaders() {
-    const code = await this.loadShader("/shaders/tracebox.wgsl");
+    const code = await this.loadShader("./shaders/tracebox.wgsl");
 
     this._shaderModule = this._device.createShaderModule({
       label: `Shader ${this.getName()}`,

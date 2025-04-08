@@ -1,8 +1,8 @@
-import FilteredRenderer from '/lib/Viz/2DFilteredRenderer.js';
-import Standard2DFullScreenObject from '/lib/DSViz/Standard2DFullScreenObject.js';
-import PGA2D from '/lib/Math/PGA2D.js';
-import SpaceshipObject from '/lib/DSViz/SpaceshipObject.js';
-import Standard2DVertexColorObject from '/lib/DSViz/Standard2DVertexColorObject.js';
+import FilteredRenderer from './lib/Viz/2DFilteredRenderer.js';
+import Standard2DFullScreenObject from './lib/DSViz/Standard2DFullScreenObject.js';
+import PGA2D from './lib/Math/PGA2D.js';
+import SpaceshipObject from './lib/DSViz/SpaceshipObject.js';
+import Standard2DVertexColorObject from './lib/DSViz/Standard2DVertexColorObject.js';
 
 async function createShapeObject(
   renderer,
@@ -56,7 +56,7 @@ async function init() {
   const renderer = new FilteredRenderer(canvasTag);
   await renderer.init();
 
-  await renderer.appendSceneObject(new Standard2DFullScreenObject(renderer._device, renderer._canvasFormat, "/assets/pexels-krisof-1252890.jpg"));
+  await renderer.appendSceneObject(new Standard2DFullScreenObject(renderer._device, renderer._canvasFormat, "./assets/pexels-krisof-1252890.jpg"));
 
   let spaceshipPose = new Float32Array([1, 0, 0, 0, 0.5, 0.5]);
   let spaceship = new SpaceshipObject(renderer._device, renderer._canvasFormat, spaceshipPose, 0.1, 0.5, 0.01);

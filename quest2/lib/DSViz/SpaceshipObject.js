@@ -1,4 +1,4 @@
-import Standard2DPGAPosedVertexColorObject from "/lib/DSViz/Standard2DPGAPosedVertexColorObject.js";
+import Standard2DPGAPosedVertexColorObject from "./Standard2DPGAPosedVertexColorObject.js";
 
 export default class SpaceshipObject extends Standard2DPGAPosedVertexColorObject {
   constructor(device, canvasFormat, pose, size = 0.1, radius = 0.5, speed = 0.01) {

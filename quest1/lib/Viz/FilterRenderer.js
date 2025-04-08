@@ -1,4 +1,4 @@
-import Renderer from '/lib/Viz/2DRenderer.js';
+import Renderer from './2DRenderer.js';
 
 export default class FilteredRenderer extends Renderer{
     constructor(canvas) {

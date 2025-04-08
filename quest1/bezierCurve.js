@@ -1,5 +1,5 @@
-import FilteredRenderer from '/lib/Viz/FilterRenderer.js';
-import Standard2DGAPosedVertexObject from '/lib/DSViz/Standard2DGAPosedVertexObject.js';
+import FilteredRenderer from './lib/Viz/FilterRenderer.js';
+import Standard2DGAPosedVertexObject from './lib/DSViz/Standard2DGAPosedVertexObject.js';
 
 async function init() {
     // Create a canvas tag

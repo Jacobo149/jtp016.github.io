@@ -1,12 +1,12 @@
-import FilteredRenderer from '/lib/Viz/FilterRenderer.js';
-import Standard2DVertexColorObject from '/lib/DSViz/Standard2DVertexObject.js';
-import Standard2DFullScreenObject from '/lib/DSViz/Standard2DFullScreenObject.js';
-import LineStrip2DVertexObject from '/lib/DSViz/LineStrip2DVertexObject.js';
-import ImageFilterObject from '/lib/DSViz/ImageFilterObject.js';
-import Image8BitsFilterObject from '/lib/DSViz/Image8BitsFilterObject.js';
-import ImageNosifyFilterObject from '/lib/DSViz/ImageNosifyFilterObject.js';
-import Standard2DGAPosedVertexObject from '/lib/DSViz/Standard2DGAPosedVertexObject.js';
-import Standard2DPGAPosedVertexColorObject from '/lib/DSViz/Standard2DGAPosedVertexColorObject.js';
+import FilteredRenderer from './lib/Viz/FilterRenderer.js';
+import Standard2DVertexColorObject from './lib/DSViz/Standard2DVertexObject.js';
+import Standard2DFullScreenObject from './lib/DSViz/Standard2DFullScreenObject.js';
+import LineStrip2DVertexObject from './lib/DSViz/LineStrip2DVertexObject.js';
+import ImageFilterObject from './lib/DSViz/ImageFilterObject.js';
+import Image8BitsFilterObject from './lib/DSViz/Image8BitsFilterObject.js';
+import ImageNosifyFilterObject from './lib/DSViz/ImageNosifyFilterObject.js';
+import Standard2DGAPosedVertexObject from './lib/DSViz/Standard2DGAPosedVertexObject.js';
+import Standard2DPGAPosedVertexColorObject from './lib/DSViz/Standard2DGAPosedVertexColorObject.js';
 
 async function init() {
     // Create a canvas tag

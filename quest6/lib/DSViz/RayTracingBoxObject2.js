@@ -21,8 +21,8 @@
  *                                anything the license permits.
  */
 
-import RayTracingObject from "/lib/DSViz/RayTracingObject.js"
-import UnitCube from "/lib/DS/UnitCube2.js"
+import RayTracingObject from "./RayTracingObject.js"
+import UnitCube from "../DS/UnitCube2.js"
 
 export default class RayTracingBoxObject extends RayTracingObject {
   constructor(device, canvasFormat, camera, showTexture = true) {
