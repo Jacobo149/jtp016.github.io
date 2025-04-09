@@ -57,7 +57,7 @@ export default class Standard2DVertexObject extends SceneObject {
   }
   
   async createShaders() {
-    let shaderCode = await this.loadShader("/shaders/standard2dcolored.wgsl"); //
+    let shaderCode = await this.loadShader("./shaders/standard2dcolored.wgsl"); //
     console.log(shaderCode);
     this._shaderModule = this._device.createShaderModule({
       label: " Shader " + this.getName(),

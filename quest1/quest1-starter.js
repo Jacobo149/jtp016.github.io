@@ -41,12 +41,14 @@ async function init() {
 
   // Create a triangle geometry
   const triangleVertices = new Float32Array([
-    // x, y
-    0, 0.5,
-    -0.5, 0,
-    0.5, 0,
+    // x,    y,     r, g, b, a
+     0.0,  0.5,   1, 0, 0, 1,
+    -0.5,  0.0,   0, 1, 0, 1,
+     0.5,  0.0,   0, 0, 1, 1,
   ]);
+  
   await renderer.appendSceneObject(new Standard2DVertexObject(renderer._device, renderer._canvasFormat, triangleVertices));
+
 
   // Create a circle geometry (approximation with multiple points)
   const circleVertices = [];
@@ -54,26 +56,40 @@ async function init() {
   const centerX = -0.8;
   const centerY = 0.2;
   const radius = 0.2;
-  for (let i = 0; i <= numSegments; i++) {
-      const angle = (i / numSegments) * 2 * Math.PI;
-      circleVertices.push(centerX, centerY); // Center of the circle
-      circleVertices.push(
-          centerX + radius * Math.cos(angle),
-          centerY + radius * Math.sin(angle)
-      );
+  for (let i = 0; i < numSegments; i++) {
+    const angle1 = (i / numSegments) * 2 * Math.PI;
+    const angle2 = ((i + 1) / numSegments) * 2 * Math.PI;
+
+    // center
+    circleVertices.push(centerX, centerY, 1, 0, 0, 1);
+    // point 1
+    circleVertices.push(
+      centerX + radius * Math.cos(angle1),
+      centerY + radius * Math.sin(angle1),
+      0, 1, 0, 1
+    );
+    // point 2
+    circleVertices.push(
+      centerX + radius * Math.cos(angle2),
+      centerY + radius * Math.sin(angle2),
+      0, 0, 1, 1
+    );
   }
+
+  
   await renderer.appendSceneObject(new Standard2DVertexObject(renderer._device, renderer._canvasFormat, new Float32Array(circleVertices)));
 
   // Create a square geometry
   const squareVertices = new Float32Array([
-    // x, y
-    -0.2, -0.1, // Bottom-left
-    0.2, -0.1,  // Bottom-right
-    0.2, -0.5,  // Top-right
-    -0.2, -0.1, // Bottom-left
-    0.2, -0.5,  // Top-right
-    -0.2, -0.5, // Top-left
+    // x, y,     r, g, b, a
+    -0.2, -0.1, 1, 0, 0, 1,
+     0.2, -0.1, 0, 1, 0, 1,
+     0.2, -0.5, 0, 0, 1, 1,
+    -0.2, -0.1, 1, 0, 0, 1,
+     0.2, -0.5, 0, 0, 1, 1,
+    -0.2, -0.5, 1, 1, 0, 1,
   ]);
+  
   await renderer.appendSceneObject(new Standard2DVertexObject(renderer._device, renderer._canvasFormat, squareVertices));
 
   renderer.render();
