@@ -3,6 +3,7 @@ import Standard2DFullScreenObject from './lib/DSViz/Standard2DFullScreenObject.j
 import PGA2D from './lib/Math/PGA2D.js';
 import SpaceshipObject from './lib/DSViz/SpaceshipObject.js';
 import Standard2DVertexColorObject from './lib/DSViz/Standard2DVertexColorObject.js';
+import SceneObject from './lib/DSViz/SceneObject.js';
 
 async function createShapeObject(
   renderer,
@@ -76,10 +77,15 @@ async function init() {
     { radius: 2.4, speed: 0.002, color: [0.5, 0.0, 0.5, 1.0] }
   ];
 
+  // Initial planet setup
   for (let i = 0; i < planetData.length; i++) {
     let angle = Math.random() * Math.PI * 2;
-    let x = planetData[i].radius * Math.cos(angle);
-    let y = planetData[i].radius * Math.sin(angle);
+
+    const a = 1.0; // semi-major axis (X)
+    const b = 0.6; // semi-minor axis (Y)
+
+    let x = planetData[i].radius * a * Math.cos(angle);
+    let y = planetData[i].radius * b * Math.sin(angle);
 
     let pose = new Float32Array([1, 0, 0, 0, x, y]);
     await createShapeObject(renderer, x, y, 0.1, ...planetData[i].color, 30, pose);
@@ -89,14 +95,18 @@ async function init() {
 
   await renderer.appendSceneObject(spaceship);
 
-
   setInterval(() => {
     renderer.render();
 
     for (let i = 0; i < planets.length; i++) {
       planets[i].angle += planets[i].speed;
-      let x = planets[i].radius * Math.cos(planets[i].angle);
-      let y = planets[i].radius * Math.sin(planets[i].angle);
+
+      const a = 1.0;
+      const b = 0.6;
+
+      let x = planets[i].radius * a * Math.cos(planets[i].angle);
+      let y = planets[i].radius * b * Math.sin(planets[i].angle);
+
       createShapeObject(renderer, x, y, 0.1, ...planetData[i].color, 30, [1, 0, 0, 0, x, y]);
     }
 
