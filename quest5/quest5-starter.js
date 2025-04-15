@@ -2,6 +2,34 @@ import Renderer from './lib/Viz/2DRenderer.js';
 import PolygonObject from './lib/DSViz/PolygonObject.js';
 import StandardTextObject from './lib/DSViz/StandardTextObject.js';
 
+function createCollisionEffect(x, y) {
+  const ripple = document.createElement('div');
+  ripple.style.position = 'absolute';
+  ripple.style.width = '20px';
+  ripple.style.height = '20px';
+  ripple.style.borderRadius = '50%';
+  ripple.style.border = '2px solid #00FFFF';
+  ripple.style.left = `${x - 10}px`;
+  ripple.style.top = `${y - 10}px`;
+  ripple.style.opacity = '1';
+  ripple.style.transform = 'scale(1)';
+  ripple.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
+  ripple.style.zIndex = 999;
+
+  effectContainer.appendChild(ripple);
+
+  requestAnimationFrame(() => {
+    ripple.style.transform = 'scale(4)';
+    ripple.style.opacity = '0';
+  });
+
+  setTimeout(() => {
+    ripple.remove();
+  }, 500);
+}
+
+let effectContainer;
+
 async function init() {
   // Create canvas
   const canvasTag = document.createElement('canvas');
@@ -22,12 +50,24 @@ async function init() {
   statusText.innerText = 'Position: unknown';
   document.body.appendChild(statusText);
 
+  // Create ripple effect container
+  effectContainer = document.createElement('div');
+  effectContainer.style.position = 'absolute';
+  effectContainer.style.top = '0';
+  effectContainer.style.left = '0';
+  effectContainer.style.width = '100%';
+  effectContainer.style.height = '100%';
+  effectContainer.style.pointerEvents = 'none';
+  effectContainer.style.overflow = 'hidden';
+  document.body.appendChild(effectContainer);
+
   // Create renderer
   const renderer = new Renderer(canvasTag);
   await renderer.init();
 
   // Add polygon with reference to status text
   const polygon = new PolygonObject(renderer._device, renderer._canvasFormat, './assets/box.polygon', renderer._canvas, statusText);
+  polygon.setEffectCallback(createCollisionEffect);
   await renderer.appendSceneObject(polygon);
 
   let fps = '??';

@@ -8,11 +8,18 @@ export default class PolygonObject extends SceneObject {
         this._canvas = canvas;
         this._statusTextElement = statusTextElement;
 
+        this._lastInside = false; // To detect entry
+        this._effectCallback = null;
+
         if (this._canvas) {
             this._initMouseTracking();
         } else {
             console.error("Canvas is undefined in PolygonObject constructor.");
         }
+    }
+
+    setEffectCallback(callback) {
+        this._effectCallback = callback;
     }
 
     async createGeometry() {
@@ -99,13 +106,19 @@ export default class PolygonObject extends SceneObject {
         const windingNumber = this.calculateWindingNumber(mousePos);
         const isInsidePolygon = windingNumber !== 0;
 
-        // Update text box if available
+        // Update status
         if (this._statusTextElement) {
             this._statusTextElement.innerText = isInsidePolygon ? 'Mouse: Inside Polygon' : 'Mouse: Outside Polygon';
         }
 
-        // Update cursor
         this._canvas.style.cursor = isInsidePolygon ? 'pointer' : 'default';
+
+        // Trigger effect on entry
+        if (isInsidePolygon && !this._lastInside && this._effectCallback) {
+            this._effectCallback(event.clientX, event.clientY);
+        }
+
+        this._lastInside = isInsidePolygon;
     }
 
     calculateWindingNumber(point) {
