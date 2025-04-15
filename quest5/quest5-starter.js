@@ -50,6 +50,20 @@ async function init() {
   statusText.innerText = 'Position: unknown';
   document.body.appendChild(statusText);
 
+  // Create instruction text
+  const instructionText = document.createElement('div');
+  instructionText.id = 'instructionText';
+  instructionText.style.position = 'absolute';
+  instructionText.style.top = '40px';
+  instructionText.style.left = '10px';
+  instructionText.style.padding = '6px 12px';
+  instructionText.style.background = 'rgba(0, 0, 0, 0.6)';
+  instructionText.style.color = 'white';
+  instructionText.style.fontFamily = 'monospace';
+  instructionText.style.zIndex = 1000;
+  instructionText.innerText = 'Arrow Up: Increase Stiffness\nArrow Down: Decrease Stiffness';
+  document.body.appendChild(instructionText);
+
   // Create ripple effect container
   effectContainer = document.createElement('div');
   effectContainer.style.position = 'absolute';
