@@ -45,7 +45,8 @@ export default class SceneObject {
   
   async createGeometry() { throw new Error("Method 'createGeometry()' must be implemented."); }
   
-  updateGeometry() { }
+  updateGeometry() {
+   }
   
   loadShader(filename) {
     return new Promise((resolve, reject) => {

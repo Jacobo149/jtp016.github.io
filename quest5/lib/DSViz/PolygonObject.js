@@ -1,34 +1,12 @@
-/*!
- * Copyright (c) 2025 SingChun LEE @ Bucknell University. CC BY-NC 4.0.
- * 
- * This code is provided mainly for educational purposes at Bucknell University.
- *
- * This code is licensed under the Creative Commons Attribution-NonCommerical 4.0
- * International License. To view a copy of the license, visit 
- *   https://creativecommons.org/licenses/by-nc/4.0/
- * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
- *
- * You are free to:
- *  - Share: copy and redistribute the material in any medium or format.
- *  - Adapt: remix, transform, and build upon the material.
- *
- * Under the following terms:
- *  - Attribution: You must give appropriate credit, provide a link to the license,
- *                 and indicate if changes where made.
- *  - NonCommerical: You may not use the material for commerical purposes.
- *  - No additional restrictions: You may not apply legal terms or technological 
- *                                measures that legally restrict others from doing
- *                                anything the license permits.
- */
-
 import SceneObject from "./SceneObject.js";
 import Polygon from "../DS/Polygon.js";
 
 export default class PolygonObject extends SceneObject {
-    constructor(device, canvasFormat, filename, canvas) {
+    constructor(device, canvasFormat, filename, canvas, statusTextElement = null) {
         super(device, canvasFormat);
         this._polygon = new Polygon(filename);
         this._canvas = canvas;
+        this._statusTextElement = statusTextElement;
 
         if (this._canvas) {
             this._initMouseTracking();
@@ -100,10 +78,8 @@ export default class PolygonObject extends SceneObject {
     }
 
     async createComputePipeline() {}
-
     compute(pass) {}
 
-    // Initialize mouse tracking
     _initMouseTracking() {
         if (!this._canvas) {
             console.error("Canvas is undefined in _initMouseTracking.");
@@ -113,61 +89,56 @@ export default class PolygonObject extends SceneObject {
     }
 
     _onMouseMove(event) {
-      if (!this._canvas) return;
-  
-      const rect = this._canvas.getBoundingClientRect();
-      const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      const mouseY = ((event.clientY - rect.top) / rect.height) * -2 + 1;
-      const mousePos = [mouseX, mouseY];
-  
-      // Calculate winding number
-      const windingNumber = this.calculateWindingNumber(mousePos);
-      console.log(`Winding Number: ${windingNumber}`);
-  
-      // Check if the mouse is inside the polygon using winding number
-      const isInsidePolygon = windingNumber !== 0;
-      console.log(isInsidePolygon ? "inside" : "outside");
-  
-      // Change the cursor based on whether it's inside or outside the polygon
-      if (isInsidePolygon) {
-          this._canvas.style.cursor = 'pointer';  // Change to pointer if inside
-      } else {
-          this._canvas.style.cursor = 'default';  // Change to default if outside
-      }
-  }
-  
-  
+        if (!this._canvas) return;
 
-    // Calculate the winding number for a point inside a polygon
+        const rect = this._canvas.getBoundingClientRect();
+        const mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const mouseY = ((event.clientY - rect.top) / rect.height) * -2 + 1;
+        const mousePos = [mouseX, mouseY];
+
+        const windingNumber = this.calculateWindingNumber(mousePos);
+        const isInsidePolygon = windingNumber !== 0;
+
+        // Update text box if available
+        if (this._statusTextElement) {
+            this._statusTextElement.innerText = isInsidePolygon ? 'Mouse: Inside Polygon' : 'Mouse: Outside Polygon';
+        }
+
+        // Update cursor
+        this._canvas.style.cursor = isInsidePolygon ? 'pointer' : 'default';
+    }
+
     calculateWindingNumber(point) {
-      let windingNumber = 0;
-      const polygon = this._polygon._polygon;
-  
-      for (let i = 0; i < polygon.length - 1; i++) {
-          const v1 = polygon[i];
-          const v2 = polygon[i + 1];
-  
-          // Handle vertical edges explicitly
-          if (v1[0] === v2[0]) { // vertical edge
-              if (point[0] < v1[0]) { // check if point is to the left of the vertical edge
-                  if ((v1[1] <= point[1] && point[1] < v2[1]) || (v2[1] <= point[1] && point[1] < v1[1])) {
-                      windingNumber += (v1[1] > v2[1]) ? 1 : -1;
-                  }
-              }
-          } else { // non-vertical edge
-              if (v1[1] <= point[1]) {
-                  if (v2[1] > point[1] && this.isLeft(v1, v2, point)) {
-                      windingNumber++;
-                  }
-              } else {
-                  if (v2[1] <= point[1] && this.isLeft(v1, v2, point)) {
-                      windingNumber--;
-                  }
-              }
-          }
-      }
-  
-      return windingNumber;
-  }
-  
+        let windingNumber = 0;
+        const polygon = this._polygon._polygon;
+
+        for (let i = 0; i < polygon.length - 1; i++) {
+            const v1 = polygon[i];
+            const v2 = polygon[i + 1];
+
+            if (v1[0] === v2[0]) {
+                if (point[0] < v1[0]) {
+                    if ((v1[1] <= point[1] && point[1] < v2[1]) || (v2[1] <= point[1] && point[1] < v1[1])) {
+                        windingNumber += (v1[1] > v2[1]) ? 1 : -1;
+                    }
+                }
+            } else {
+                if (v1[1] <= point[1]) {
+                    if (v2[1] > point[1] && this.isLeft(v1, v2, point)) {
+                        windingNumber++;
+                    }
+                } else {
+                    if (v2[1] <= point[1] && this.isLeft(v1, v2, point)) {
+                        windingNumber--;
+                    }
+                }
+            }
+        }
+
+        return windingNumber;
+    }
+
+    isLeft(p0, p1, p2) {
+        return ((p1[0] - p0[0]) * (p2[1] - p0[1]) - (p2[0] - p0[0]) * (p1[1] - p0[1])) > 0;
+    }
 }

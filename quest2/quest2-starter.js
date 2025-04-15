@@ -107,7 +107,7 @@ async function init() {
       let x = planets[i].radius * a * Math.cos(planets[i].angle);
       let y = planets[i].radius * b * Math.sin(planets[i].angle);
 
-      createShapeObject(renderer, x, y, 0.1, ...planetData[i].color, 30, [1, 0, 0, 0, x, y]);
+     createShapeObject(renderer, x, y, 0.1, ...planetData[i].color, 30, [1, 0, 0, 0, x, y]);
     }
 
     spaceship.updateGeometry();
