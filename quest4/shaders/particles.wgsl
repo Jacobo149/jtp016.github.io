@@ -36,7 +36,7 @@ fn vertexMain(@builtin(instance_index) idx: u32, @builtin(vertex_index) vIdx: u3
 // Fragment shader to color the particles
 @fragment
 fn fragmentMain() -> @location(0) vec4f {
-  return vec4f(238.0/255.0, 118.0/255.0, 35.0/255.0, 1.0); // Particle color (RGB)
+  return vec4f(245.0/255.0, 245.0/255.0, 220.0/255.0, 1.0); // Particle color (RGB)
 }
 
 // Add mouse position as input
