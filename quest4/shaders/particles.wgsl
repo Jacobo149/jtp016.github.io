@@ -63,7 +63,7 @@ fn computeMain(@builtin(global_invocation_id) global_id: vec3u) {
         // Apply mouse attraction force
         let direction = mousePosition - p.position; // Direction vector from particle to mouse
         let distance = length(direction);
-        if (distance > 0.1) { // Apply attraction only if particle is far enough
+        if (distance > 0.3) { // Apply attraction only if particle is far enough
           let attraction = normalize(direction) * 0.05; // Apply constant attraction force
           p.velocity += attraction;
         }
@@ -78,7 +78,7 @@ fn computeMain(@builtin(global_invocation_id) global_id: vec3u) {
       p.position = vec2f(0.0, 0.0);
       p.velocity = vec2f((fract(sin(f32(idx) * 0.8) * 43758.5453) * 2.0 - 1.0) * 0.1,
                          (fract(cos(f32(idx) * 0.8) * 43758.5453) * 2.0 - 1.0) * 0.1);
-      p.lifespan = 5.0;
+      p.lifespan = 15.0;
       p.age = 0.0;
       p.isActive = 1;
     }
