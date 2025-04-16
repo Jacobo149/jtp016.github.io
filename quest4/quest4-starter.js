@@ -35,6 +35,21 @@ async function init() {
   const canvasTag = document.createElement('canvas');
   canvasTag.id = "renderCanvas";
   document.body.appendChild(canvasTag);
+
+  // Create instruction text
+  const instructionText = document.createElement('div');
+  instructionText.id = 'instructionText';
+  instructionText.style.position = 'absolute';
+  instructionText.style.top = '40px';
+  instructionText.style.left = '10px';
+  instructionText.style.padding = '6px 12px';
+  instructionText.style.background = 'rgba(0, 0, 0, 0.6)';
+  instructionText.style.color = 'white';
+  instructionText.style.fontFamily = 'monospace';
+  instructionText.style.zIndex = 1000;
+  instructionText.innerText = 'e: Add Particles\na: Toggle Mouse Attraction';
+  document.body.appendChild(instructionText);
+
   // Create a 2d animated renderer
   const renderer = new Renderer(canvasTag);
   await renderer.init();

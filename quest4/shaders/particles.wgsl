@@ -24,7 +24,7 @@ fn vertexMain(@builtin(instance_index) idx: u32, @builtin(vertex_index) vIdx: u3
     return vec4f(0.0, 0.0, 0.0, 1.0); // Return invalid position for inactive particles
   }
 
-  let size = 1.01;
+  let size = 0.8;
   let pi = 3.14159265;
   let theta = 2 * pi / 16 * f32(vIdx);
   let x = cos(theta) * size;
