@@ -1,8 +1,8 @@
 // This is a starter code for the Quest 7 assignment.
-import RayTracer from '/lib/Viz/RayTracer.js';
-import StandardTextObject from '/lib/DSViz/StandardTextObject.js';
-import VolumeRenderingSimpleObject from '/lib/DSViz/VolumeRenderingSimpleObject.js';
-import Camera from '/lib/Viz/3DCamera.js';
+import RayTracer from './lib/Viz/RayTracer.js';
+import StandardTextObject from './lib/DSViz/StandardTextObject.js';
+import VolumeRenderingSimpleObject from './lib/DSViz/VolumeRenderingSimpleObject.js';
+import Camera from './lib/Viz/3DCamera.js';
 
 async function init() {
   // Create canvas and tracer
