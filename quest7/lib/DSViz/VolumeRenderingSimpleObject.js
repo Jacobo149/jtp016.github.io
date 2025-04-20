@@ -157,6 +157,17 @@ export default class VolumeRenderingSimpleObject extends RayTracingObject {
     this._wgWidth = Math.ceil(outTexture.width);
     this._wgHeight = Math.ceil(outTexture.height);
   }
+
+  cameraUpdated() {
+    this.updateCameraPose();
+    this.updateCameraFocal();
+    this._device.queue.writeBuffer(
+      this._cameraBuffer,
+      this._camera._pose.byteLength + this._camera._focal.byteLength,
+      this._camera._resolutions
+    );
+  }
+  
   
   compute(pass) {
     // add to compute pass
