@@ -30,6 +30,20 @@ async function init() {
   let fps = '??';
   var fpsText = new StandardTextObject('fps: ' + fps);
 
+  // Add keybind help text
+  const helpText = new StandardTextObject(
+    `📦 Key Controls:
+W/S: Move Forward/Backward
+A/D: Move Left/Right
+Q/E: Move In/Out
+
+Arrow Keys: Rotate X/Y
+Z/X: Rotate Z
+
++/-: Zoom In/Out
+P: Toggle Perspective`
+  );
+
   // Animation loop
   var frameCnt = 0;
   var tgtFPS = 60;
