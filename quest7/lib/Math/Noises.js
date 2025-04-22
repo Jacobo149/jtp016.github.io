@@ -84,22 +84,109 @@ export default class PerlinNoise {
   
   // 2D Perlin Noise
   noise2d(x, y) {
-    // TODO: implement the 2D Perline Noise
-    // implementation ref: // ref: https://mrl.cs.nyu.edu/~perlin/noise/
-    return 0;
+    const fade = (t) => { return t * t * t * (t * (t * 6 - 15) + 10) }; 
+    const interpolate = (src, dst, t) => { return src * t + dst * (1 - t) };
+    
+    let ix = Math.floor(x) & 255;
+    let iy = Math.floor(y) & 255;
+    let ix1 = (ix + 1) & 255;
+    let iy1 = (iy + 1) & 255;
+    
+    x -= Math.floor(x);
+    y -= Math.floor(y);
+    
+    let tx = fade(x);
+    let ty = fade(y);
+    
+    let src = this._permutation[ix + this._permutation[iy]];
+    let dst = this._permutation[ix1 + this._permutation[iy]];
+    
+    let srcGrad = this.gradient(src, x, y);
+    let dstGrad = this.gradient(dst, x - 1, y);
+    
+    let src2 = this._permutation[ix + this._permutation[iy1]];
+    let dst2 = this._permutation[ix1 + this._permutation[iy1]];
+    
+    let srcGrad2 = this.gradient(src2, x, y - 1);
+    let dstGrad2 = this.gradient(dst2, x - 1, y - 1);
+    
+    let interp1 = interpolate(srcGrad, dstGrad, tx);
+    let interp2 = interpolate(srcGrad2, dstGrad2, tx);
+    
+    return interpolate(interp1, interp2, ty);
   }
+  
   
   // 3D Perlin Noise
   noise3d(x, y, z) {
-    // TODO: implement the 3D Perline Noise
-    // implementation ref: // ref: https://mrl.cs.nyu.edu/~perlin/noise/
-    return 0;
+    const fade = (t) => { return t * t * t * (t * (t * 6 - 15) + 10) };
+    const interpolate = (src, dst, t) => { return src * t + dst * (1 - t) };
+  
+    let ix = Math.floor(x) & 255;
+    let iy = Math.floor(y) & 255;
+    let iz = Math.floor(z) & 255;
+  
+    let ix1 = (ix + 1) & 255;
+    let iy1 = (iy + 1) & 255;
+    let iz1 = (iz + 1) & 255;
+  
+    x -= Math.floor(x);
+    y -= Math.floor(y);
+    z -= Math.floor(z);
+  
+    let tx = fade(x);
+    let ty = fade(y);
+    let tz = fade(z);
+  
+    let src = this._permutation[ix + this._permutation[iy + this._permutation[iz]]];
+    let dst = this._permutation[ix1 + this._permutation[iy + this._permutation[iz]]];
+    
+    let srcGrad = this.gradient(src, x, y, z);
+    let dstGrad = this.gradient(dst, x - 1, y, z);
+  
+    let src2 = this._permutation[ix + this._permutation[iy1 + this._permutation[iz]]];
+    let dst2 = this._permutation[ix1 + this._permutation[iy1 + this._permutation[iz]]];
+    
+    let srcGrad2 = this.gradient(src2, x, y - 1, z);
+    let dstGrad2 = this.gradient(dst2, x - 1, y - 1, z);
+  
+    let src3 = this._permutation[ix + this._permutation[iy + this._permutation[iz1]]];
+    let dst3 = this._permutation[ix1 + this._permutation[iy + this._permutation[iz1]]];
+    
+    let srcGrad3 = this.gradient(src3, x, y, z - 1);
+    let dstGrad3 = this.gradient(dst3, x - 1, y, z - 1);
+  
+    let src4 = this._permutation[ix + this._permutation[iy1 + this._permutation[iz1]]];
+    let dst4 = this._permutation[ix1 + this._permutation[iy1 + this._permutation[iz1]]];
+  
+    let srcGrad4 = this.gradient(src4, x, y - 1, z - 1);
+    let dstGrad4 = this.gradient(dst4, x - 1, y - 1, z - 1);
+  
+    let interp1 = interpolate(srcGrad, dstGrad, tx);
+    let interp2 = interpolate(srcGrad2, dstGrad2, tx);
+    let interp3 = interpolate(srcGrad3, dstGrad3, tx);
+    let interp4 = interpolate(srcGrad4, dstGrad4, tx);
+  
+    let interp5 = interpolate(interp1, interp2, ty);
+    let interp6 = interpolate(interp3, interp4, ty);
+  
+    return interpolate(interp5, interp6, tz);
   }
+  
   
   // 2D Octave Perlin Noise
   octaveNoise2d(x, y, freq = 0.005, A = 1, H = 0.99, octaves = 4, lacunarity = 2) {
-    // TODO: implement the 2D octave Perline Noise
-    // ref: https://miquelvir.medium.com/procedural-fractal-terrains-how-does-minecraft-generate-infinite-maps-776103e180ee
-    return 0;
+    let total = 0;
+    let maxAmplitude = 0;
+    
+    for (let i = 0; i < octaves; i++) {
+      total += this.noise2d(x * freq, y * freq) * A;
+      maxAmplitude += A;
+      A *= H;
+      freq *= lacunarity;
+    }
+  
+    return total / maxAmplitude;
   }
+  
 }
