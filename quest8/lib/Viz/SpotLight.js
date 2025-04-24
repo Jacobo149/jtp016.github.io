@@ -21,7 +21,7 @@
  *                                anything the license permits.
  */
 
-import Light from "/lib/Viz/Light.js";
+import Light from "./Light.js";
 
 export default class SpotLight extends Light {
   constructor(

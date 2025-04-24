@@ -30,12 +30,12 @@
  * Copyright (c) 2025 SingChun LEE @ Bucknell University. CC BY-NC 4.0.
  */
 
-import RayTracer from "/lib/Viz/RayTracer.js";
-import RayTracingBoxLightObject from "/lib/DSViz/RayTracingBoxLightObject.js";
-import Camera from "/lib/Viz/3DCamera.js";
-import PointLight from "/lib/Viz/PointLight.js";
-import DirectionalLight from "/lib/Viz/DirectionalLight.js";
-import SpotLight from "/lib/Viz/SpotLight.js";
+import RayTracer from "./lib/Viz/RayTracer.js";
+import RayTracingBoxLightObject from "./lib/DSViz/RayTracingBoxLightObject.js";
+import Camera from "./lib/Viz/3DCamera.js";
+import PointLight from "./lib/Viz/PointLight.js";
+import DirectionalLight from "./lib/Viz/DirectionalLight.js";
+import SpotLight from "./lib/Viz/SpotLight.js";
 
 // === Constants === //
 const moveSpeed = 0.2;
