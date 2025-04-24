@@ -396,7 +396,7 @@ fn boxEmitColor() -> vec4f {
 }
 
 // a function to get the box diffuse color
-fn boxDiffuseColor(idx: i32) -> vec4f {
+fn lamberDiffuseColor(idx: i32) -> vec4f {
   // CyberPunk Theme
   var color: vec4f;
   switch(idx) {
@@ -406,6 +406,39 @@ fn boxDiffuseColor(idx: i32) -> vec4f {
     case 3: { color = vec4f(255.0/255, 255.0/255, 0.0/255, 1.0); break; } // Neon yellow  
     case 4: { color = vec4f(255.0/255, 0.0/255, 255.0/255, 1.0); break; } // Magenta  
     case 5: { color = vec4f(0.0/255, 0.0/255, 255.0/255, 1.0); break; } // Electric blue  
+    default: { color = vec4f(0.0, 0.0, 0.0, 1.0); break; } // Black
+  }
+
+  return color;
+}
+
+fn toonDiffuseColor(idx: i32) -> vec4f {
+  // CyberPunk Theme
+  var color: vec4f;
+  switch(idx) {
+    // Toon Palette - Bold & High Contrast
+    case 0: { color = vec4f(255.0/255, 85.0/255, 85.0/255, 1.0); break; } // Cartoon Red  
+    case 1: { color = vec4f(255.0/255, 221.0/255, 51.0/255, 1.0); break; } // Cartoon Yellow  
+    case 2: { color = vec4f(51.0/255, 204.0/255, 51.0/255, 1.0); break; } // Cartoon Green  
+    case 3: { color = vec4f(51.0/255, 153.0/255, 255.0/255, 1.0); break; } // Cartoon Blue  
+    case 4: { color = vec4f(153.0/255, 102.0/255, 255.0/255, 1.0); break; } // Cartoon Purple  
+    case 5: { color = vec4f(0.0/255, 0.0/255, 0.0/255, 1.0); break; } // Cartoon Black (shadow base)   
+    default: { color = vec4f(0.0, 0.0, 0.0, 1.0); break; } // Black
+  }
+
+  return color;
+}
+
+fn phongDiffuseColor(idx: i32) -> vec4f {
+  // CyberPunk Theme
+  var color: vec4f;
+  switch(idx) {
+    case 0: { color = vec4f(192.0/255, 57.0/255, 43.0/255, 1.0); break; } // Crimson Red  
+    case 1: { color = vec4f(243.0/255, 156.0/255, 18.0/255, 1.0); break; } // Amber Gold  
+    case 2: { color = vec4f(39.0/255, 174.0/255, 96.0/255, 1.0); break; } // Emerald Green  
+    case 3: { color = vec4f(41.0/255, 128.0/255, 185.0/255, 1.0); break; } // Sapphire Blue  
+    case 4: { color = vec4f(127.0/255, 140.0/255, 141.0/255, 1.0); break; } // Steel Gray  
+    case 5: { color = vec4f(236.0/255, 240.0/255, 241.0/255, 1.0); break; } // Pearl White    
     default: { color = vec4f(0.0, 0.0, 0.0, 1.0); break; } // Black
   }
 
@@ -595,7 +628,7 @@ fn phongShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
 
   if (hitInfo.x > 0) {
     let emit = boxEmitColor();
-    var diffuse = boxDiffuseColor(i32(hitInfo.y));
+    var diffuse = phongDiffuseColor(i32(hitInfo.y));
     var normal = boxNormal(i32(hitInfo.y));
     normal = transformNormal(normal);
 
@@ -629,7 +662,7 @@ fn lamberShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
 
   if (hitInfo.x > 0) {
     let emit = boxEmitColor();
-    var diffuse = boxDiffuseColor(i32(hitInfo.y));
+    var diffuse = lamberDiffuseColor(i32(hitInfo.y));
     var normal = boxNormal(i32(hitInfo.y));
     normal = transformNormal(normal);
 
@@ -655,7 +688,7 @@ fn toonShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
   var color = vec4f(0.f / 255, 56.f / 255, 101.f / 255, 1.); // Bucknell Blue
   if (hitInfo.x > 0) { // Hit detection
     let emit = boxEmitColor(); // Get emission color
-    var diffuse = boxDiffuseColor(i32(hitInfo.y)); // Get diffuse material property
+    var diffuse = toonDiffuseColor(i32(hitInfo.y)); // Get diffuse material property
     var normal = transformNormal(boxNormal(i32(hitInfo.y))); // Transform normal to world coordinates
 
     // Light setup
