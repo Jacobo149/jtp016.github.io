@@ -397,38 +397,18 @@ fn boxEmitColor() -> vec4f {
 
 // a function to get the box diffuse color
 fn boxDiffuseColor(idx: i32) -> vec4f {
-  // my box has different colors for each foace
+  // CyberPunk Theme
   var color: vec4f;
   switch(idx) {
-    case 0: { //front
-      color = vec4f(232.f/255, 119.f/255, 34.f/255, 1.); // Bucknell Orange 1
-      break;
-    }
-    case 1: { //back
-      color = vec4f(255.f/255, 163.f/255, 0.f/255, 1.); // Bucknell Orange 2
-      break;
-    }
-    case 2: { //left
-      color = vec4f(0.f/255, 130.f/255, 186.f/255, 1.); // Bucknell Blue 2
-      break;
-    }
-    case 3: { //right
-      color = vec4f(89.f/255, 203.f/255, 232.f/255, 1.); // Bucknell Blue 3
-      break;
-    }
-    case 4: { //top
-      color = vec4f(217.f/255, 217.f/255, 214.f/255, 1.); // Bucknell gray 1
-      break;
-    }
-    case 5: { //down
-      color = vec4f(167.f/255, 168.f/255, 170.f/255, 1.); // Bucknell gray 2
-      break;
-    }
-    default: {
-      color = vec4f(0.f/255, 0.f/255, 0.f/255, 1.); // Black
-      break;
-    }
+    case 0: { color = vec4f(255.0/255, 0.0/255, 110.0/255, 1.0); break; } // Hot pink  
+    case 1: { color = vec4f(0.0/255, 255.0/255, 255.0/255, 1.0); break; } // Cyan glow  
+    case 2: { color = vec4f(100.0/255, 0.0/255, 255.0/255, 1.0); break; } // Purple  
+    case 3: { color = vec4f(255.0/255, 255.0/255, 0.0/255, 1.0); break; } // Neon yellow  
+    case 4: { color = vec4f(255.0/255, 0.0/255, 255.0/255, 1.0); break; } // Magenta  
+    case 5: { color = vec4f(0.0/255, 0.0/255, 255.0/255, 1.0); break; } // Electric blue  
+    default: { color = vec4f(0.0, 0.0, 0.0, 1.0); break; } // Black
   }
+
   return color;
 }
 
@@ -470,85 +450,272 @@ struct LightInfo {
 
 // a function to compute the light intensity and direction
 fn getLightInfo(lightPos: vec3f, lightDir: vec3f, hitPoint: vec3f, objectNormal: vec3f) -> LightInfo {
-  // Note: here I implemented point light - you should modify this function for different light sources
-  // first, get the source intensity
-  var intensity = light.intensity; 
-  // then, compute the distance between the light source and the hit point
-  var dist = length(hitPoint - lightPos);
-  // next, compute the attenuation factor
-  let factor = light.attenuation[0] + dist * light.attenuation[1] + dist * dist * light.attenuation[2];
-  // now reduce the light intenstiy using the factor
-  intensity /= factor;
-  // compute the view direction
-  var viewDirection = normalize(hitPoint - lightPos);
-  // set the final light info
+  var intensity = light.intensity;
   var out: LightInfo;
-  // the final light intensity depends on the view direction
-  out.intensity = intensity * max(dot(viewDirection, -objectNormal), 0);
-  // the final light diretion is the current view direction
-  out.lightdir = viewDirection;
+  
+  // 1 = Point Light (default)
+  // 2 = Directional Light
+  // 3 = Spot Light
+  let lightType = i32(light.params.z); // Use z component to store light type
+  
+  if (lightType == 2) {
+    // Directional Light - intensity is constant, direction is fixed
+    intensity *= 0.5;
+    out.intensity = intensity * max(dot(-lightDir, objectNormal), 0);
+    out.lightdir = -lightDir; // Directional lights use a fixed direction
+  } 
+  else if (lightType == 3) {
+    // Spot Light - has position, direction, cutoff and dropoff
+    var distVec = hitPoint - lightPos;
+    var dist = length(distVec);
+    var lightToPoint = normalize(distVec);
+    
+    // Make sure light direction is normalized
+    var normalizedLightDir = normalize(lightDir);
+    
+    // Calculate the angle between light direction and the vector to the hit point
+    // For a spotlight pointing down, the light direction is [0,-1,0]
+    // We want to check if the point is within the cone defined by the spotlight
+    let cosAngle = dot(normalizedLightDir, -lightToPoint);
+    let cutoff = light.params.x;
+    
+    // If the point is within the spotlight cone
+    if (cosAngle > cos(cutoff)) {
+      // Calculate intensity based on angle from center of spotlight
+      let dropoff = max(light.params.y, 1.0);
+      let spotFactor = pow(cosAngle, dropoff);
+      
+      // Calculate distance-based attenuation
+      let factor = light.attenuation[0] + dist * light.attenuation[1] + dist * dist * light.attenuation[2];
+      
+      // Apply both spot factor and distance attenuation
+      intensity = intensity * spotFactor / factor;
+      
+      // Final lighting calculation with normal
+      out.intensity = intensity * max(dot(-lightToPoint, objectNormal), 0);
+    } else {
+      // Outside the spotlight cone - no direct light
+      out.intensity = vec4f(0.0, 0.0, 0.0, 0.0);
+    }
+    
+    out.lightdir = -lightToPoint;
+  }
+  else {
+    // Point Light (default)
+    var distVec = hitPoint - lightPos;
+    var dist = length(distVec);
+    var lightToPoint = normalize(distVec);
+
+    let factor = light.attenuation[0] + dist * light.attenuation[1] + dist * dist * light.attenuation[2];
+    intensity /= factor;
+    out.intensity = intensity * max(dot(lightToPoint, -objectNormal), 0);
+    out.lightdir = lightToPoint;
+  }
+  
   return out;
 }
 
 @compute
 @workgroup_size(16, 16)
 fn computeOrthogonalMain(@builtin(global_invocation_id) global_id: vec3u) {
-  // get the pixel coordiantes
+  // Get the pixel coordinates
   let uv = vec2i(global_id.xy);
   let texDim = vec2i(textureDimensions(outTexture));
+
+  // Ensure we are within bounds
   if (uv.x < texDim.x && uv.y < texDim.y) {
-    // compute the pixel size
+    // Compute pixel size
     let psize = vec2f(2, 2) / cameraPose.res.xy;
-    // orthogonal camera ray sent from each pixel center at z = 0
-    var spt = vec3f((f32(uv.x) + 0.5) * psize.x - 1, (f32(uv.y) + 0.5) * psize.y - 1, 0);
-    var rdir = vec3f(0, 0, 1);
-    // apply transformation
+
+    // Orthogonal camera: ray originates at each pixel's center, direction along z-axis
+    var spt = vec3f((f32(uv.x) + 0.5) * psize.x - 1, (f32(uv.y) + 0.5) * psize.y - 1, 0.0);
+    var rdir = vec3f(0.0, 0.0, 1.0);
+
+    // Apply transformations
     spt = transformPt(spt);
     rdir = transformDir(rdir);
-    // compute the intersection to the object
-    var hitInfo = rayBoxIntersection(spt, rdir);
-    // assign colors
-    var color = vec4f(0.f/255, 56.f/255, 101.f/255, 1.); // Bucknell Blue
-    if (hitInfo.x > 0) { // if there is a hit
-      // here, I provide you with the Lambertian shading implementation
-      // You need to modify it for other shading model
-      // first, get the emit color
-      let emit = boxEmitColor();
-      // then, compute the diffuse color, which depends on the light source
-      //   1. get the box diffuse color - i.e. the material property of diffusion on the box
-      var diffuse = boxDiffuseColor(i32(hitInfo.y)); // get the box diffuse property
-      //   2. get the box normal
-      var normal = boxNormal(i32(hitInfo.y));
-      //   3. transform the normal to the world coordinates
-      //   Note: here it is using the box pose/motor and scale. 
-      //         you will need to modify this transformation for different objects
-      normal = transformNormal(normal);
-      //   4. transform the light to the world coordinates
-      //   Note: My light is stationary, so Icancel the camera movement to keep it stationary
-      let lightPos = applyMotorToPoint(light.position.xyz, reverse(cameraPose.motor));
-      let lightDir = applyMotorToDir(light.direction.xyz, reverse(cameraPose.motor));
-      //   5. transform the hit point to the world coordiantes
-      //   Note: the hit point is in the model coordiantes, need to transform back to the world
-      var hitPt = spt + rdir * hitInfo.x;
-      hitPt = transformHitPoint(hitPt);
-      //   6. compute the light information
-      //   Note: I do the light computation in the world coordiantes because the light intensity depends on the distance and angles in the world coordiantes! If you do it in other coordinate system, make sure you transform them properly back to the world one.
-      let lightInfo = getLightInfo(lightPos, lightDir, hitPt, normal);
-      //   7. finally, modulate the diffuse color by the light
-      diffuse *= lightInfo.intensity;
-      // last, compute the final color. Here Lambertian = emit + diffuse
-      color = emit + diffuse;
-      // Note: I do not use lightInfo.lightdir here, but you will need it for Phong and tone shading
-      
+
+    // Choose shading model based on light parameters
+    if (light.params.w == 1.0) {
+      phongShader(uv, spt, rdir);
+    } else if (light.params.w == 2.0) {
+      toonShader(uv, spt, rdir);
+    } else {
+      lamberShader(uv, spt, rdir); // Default Lambertian shading
     }
-    // set the final color to the pixel
-    textureStore(outTexture, uv, color); 
   }
 }
+
 
 @compute
 @workgroup_size(16, 16)
 fn computeProjectiveMain(@builtin(global_invocation_id) global_id: vec3u) {
-  // TODO: copy your code of quest 6 here
-  // This should be very similar to the orthogonal one above
+  // Get the pixel coordinates
+  let uv = vec2i(global_id.xy);
+  let texDim = vec2i(textureDimensions(outTexture));
+
+  // Ensure we are within bounds
+  if (uv.x < texDim.x && uv.y < texDim.y) {
+    // Compute pixel size based on focal length and resolution
+    let psize = vec2f(2, 2) * cameraPose.focal.xy / cameraPose.res.xy;
+
+    // Projective camera setup: rays start from origin (0, 0, 0) and point toward each pixel
+    var spt = vec3f(0.0, 0.0, 0.0);
+    var rdir = vec3f(
+      (f32(uv.x) + 0.5) * psize.x - cameraPose.focal.x,
+      (f32(uv.y) + 0.5) * psize.y - cameraPose.focal.y,
+      cameraPose.focal.x
+    );
+
+    // Normalize the direction vector
+    rdir = normalize(rdir);
+
+    // Apply transformations
+    spt = transformPt(spt);
+    rdir = transformDir(rdir);
+
+    // Compute the intersection with the object
+    var hitInfo = rayBoxIntersection(spt, rdir);
+
+    // Choose shading model based on light parameters
+    if (light.params.w == 1.0) {
+      phongShader(uv, spt, rdir);
+    } else if (light.params.w == 2.0) {
+      toonShader(uv, spt, rdir);
+    } else {
+      lamberShader(uv, spt, rdir); // Default Lambertian shading
+    }
+  }
+}
+
+
+fn phongShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
+  var hitInfo = rayBoxIntersection(spt, rdir);
+  var color = vec4f(0.f/255, 56.f/255, 101.f/255, 1.);
+
+  if (hitInfo.x > 0) {
+    let emit = boxEmitColor();
+    var diffuse = boxDiffuseColor(i32(hitInfo.y));
+    var normal = boxNormal(i32(hitInfo.y));
+    normal = transformNormal(normal);
+
+    let lightPos = applyMotorToPoint(light.position.xyz, reverse(cameraPose.motor));
+    let lightDir = applyMotorToDir(light.direction.xyz, reverse(cameraPose.motor));
+
+    var hitPt = spt + rdir * hitInfo.x;
+    hitPt = transformHitPoint(hitPt);
+
+    let lightInfo = getLightInfo(lightPos, lightDir, hitPt, normal);
+    
+    var diffuseComponent = diffuse * lightInfo.intensity;
+
+    var reflectDir = reflect(lightInfo.lightdir, normal);
+    var viewDir = normalize(-rdir);
+    var specFactor = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    var specularComponent = vec4f(1.0, 1.0, 1.0, 1.0) * light.intensity * specFactor;
+
+    var ambientComponent = diffuse * 0.1;
+
+    color = emit + diffuseComponent + specularComponent + ambientComponent;
+  }
+
+  textureStore(outTexture, uv, color);
+}
+
+
+fn lamberShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
+  var hitInfo = rayBoxIntersection(spt, rdir);
+  var color = vec4f(0.f/255, 56.f/255, 101.f/255, 1.); // Bucknell Blue
+
+  if (hitInfo.x > 0) {
+    let emit = boxEmitColor();
+    var diffuse = boxDiffuseColor(i32(hitInfo.y));
+    var normal = boxNormal(i32(hitInfo.y));
+    normal = transformNormal(normal);
+
+    let lightPos = applyMotorToPoint(light.position.xyz, reverse(cameraPose.motor));
+    let lightDir = applyMotorToDir(light.direction.xyz, reverse(cameraPose.motor));
+    
+    var hitPt = spt + rdir * hitInfo.x;
+    hitPt = transformHitPoint(hitPt);
+
+    let lightInfo = getLightInfo(lightPos, lightDir, hitPt, normal);
+    diffuse *= lightInfo.intensity;
+
+    color = emit + diffuse;
+  }
+
+  textureStore(outTexture, uv, color);
+}
+
+
+fn toonShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
+  // Compute the intersection with the object
+  var hitInfo = rayBoxIntersection(spt, rdir);
+  var color = vec4f(0.f / 255, 56.f / 255, 101.f / 255, 1.); // Bucknell Blue
+  if (hitInfo.x > 0) { // Hit detection
+    let emit = boxEmitColor(); // Get emission color
+    var diffuse = boxDiffuseColor(i32(hitInfo.y)); // Get diffuse material property
+    var normal = transformNormal(boxNormal(i32(hitInfo.y))); // Transform normal to world coordinates
+
+    // Light setup
+    let lightPos = applyMotorToPoint(light.position.xyz, reverse(cameraPose.motor));
+    let lightDir = applyMotorToDir(light.direction.xyz, reverse(cameraPose.motor));
+
+    // Transform the hit point to world coordinates
+    var hitPt = transformHitPoint(spt + rdir * hitInfo.x);
+
+    // Compute light information
+    let lightInfo = getLightInfo(lightPos, lightDir, hitPt, normal);
+
+    // Phong components
+    var diffuseIntensity = max(dot(-lightInfo.lightdir, normal), 0.0);
+    var shininess = 32.0;
+    var reflectDir = reflect(lightInfo.lightdir, normal);
+    var viewDir = normalize(-rdir);
+    var specFactor = max(dot(viewDir, reflectDir), 0.0);
+    specFactor = pow(specFactor, shininess);
+
+    // Quantize diffuse into more levels (e.g., 6 levels: 0.0, 0.17, 0.33, 0.5, 0.67, 1.0)
+    if (diffuseIntensity < 0.17) {
+      diffuseIntensity = 0.0;
+    } else if (diffuseIntensity < 0.33) {
+      diffuseIntensity = 0.17;
+    } else if (diffuseIntensity < 0.5) {
+      diffuseIntensity = 0.33;
+    } else if (diffuseIntensity < 0.67) {
+      diffuseIntensity = 0.5;
+    } else if (diffuseIntensity < 0.83) {
+      diffuseIntensity = 0.67;
+    } else {
+      diffuseIntensity = 1.0;
+    }
+
+    // Quantize specular to more levels (e.g., 4 levels: 0.0, 0.33, 0.67, 1.0)
+    if (specFactor < 0.33) {
+      specFactor = 0.0;
+    } else if (specFactor < 0.67) {
+      specFactor = 0.33;
+    } else if (specFactor < 1.0) {
+      specFactor = 0.67;
+    } else {
+      specFactor = 1.0;
+    }
+
+    // Final components
+    var diffuseComponent = diffuse * light.intensity * diffuseIntensity;
+    var specularComponent = vec4f(1.0, 1.0, 1.0, 1.0) * light.intensity * specFactor;
+    var ambientComponent = diffuse * 0.1;
+
+    // Edge detection (simulating cartoon edges)
+    var edgeFactor = dot(normal, viewDir);
+    if (edgeFactor < 0.4) {
+      color = vec4f(0.0, 0.0, 0.0, 1.0); // Edge color
+    } else {
+      color = emit + diffuseComponent + specularComponent + ambientComponent;
+    }
+  }
+
+  // Set the final color to the pixel
+  textureStore(outTexture, uv, color);
 }

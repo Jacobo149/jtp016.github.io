@@ -1,10 +1,10 @@
 /*!
  * Copyright (c) 2025 SingChun LEE @ Bucknell University. CC BY-NC 4.0.
- * 
+ *
  * This code is provided mainly for educational purposes at Bucknell University.
  *
  * This code is licensed under the Creative Commons Attribution-NonCommerical 4.0
- * International License. To view a copy of the license, visit 
+ * International License. To view a copy of the license, visit
  *   https://creativecommons.org/licenses/by-nc/4.0/
  * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  *
@@ -16,19 +16,19 @@
  *  - Attribution: You must give appropriate credit, provide a link to the license,
  *                 and indicate if changes where made.
  *  - NonCommerical: You may not use the material for commerical purposes.
- *  - No additional restrictions: You may not apply legal terms or technological 
+ *  - No additional restrictions: You may not apply legal terms or technological
  *                                measures that legally restrict others from doing
  *                                anything the license permits.
  */
 
-import Renderer from "./2DRenderer.js"
+import Renderer from "/lib/Viz/2DRenderer.js";
 
 export default class RayTracer extends Renderer {
   constructor(canvas) {
     super(canvas);
     this._tracer = null;
   }
-  
+
   async init() {
     // Check if it supports WebGPU
     if (!navigator.gpu) {
@@ -70,14 +70,14 @@ export default class RayTracer extends Renderer {
         let uv = fragCoord.xy / imgSize; // vec2f(textureDimensions(inTexture, 0));
         return textureSample(inTexture, inSampler, uv);
       }
-      `
+      `,
     });
     // Create camera buffer to store the camera pose and scale in GPU
     this._outputSizeBuffer = this._device.createBuffer({
       label: "Ray Tracer output size buffer",
       size: 8,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-    }); 
+    });
     // create the pipeline to render the result on the canvas
     this._pipeline = this._device.createRenderPipeline({
       label: "Ray Tracer Pipeline",
@@ -89,28 +89,30 @@ export default class RayTracer extends Renderer {
       fragment: {
         module: this._shaderModule,
         entryPoint: "fragmentMain",
-        targets: [{
-          format: this._canvasFormat
-        }]
-      }
+        targets: [
+          {
+            format: this._canvasFormat,
+          },
+        ],
+      },
     });
     this._sampler = this._device.createSampler({
       label: "Ray Tracer Sampler",
       magFilter: "linear",
-      minFilter: "linear"
+      minFilter: "linear",
     });
     this.resizeCanvas();
-    window.addEventListener('resize', this.resizeCanvas.bind(this));
+    window.addEventListener("resize", this.resizeCanvas.bind(this));
   }
-  
+
   resizeCanvas() {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const width = window.innerWidth * devicePixelRatio;
     const height = window.innerHeight * devicePixelRatio;
-    const ratio = width/height;
+    const ratio = width / height;
     // NOTE: if yours is too slow, chante the target height here, e.g. 512
-    const tgtHeight = height; 
-    let imgSize = { width: tgtHeight * ratio, height: tgtHeight};
+    const tgtHeight = height;
+    let imgSize = { width: tgtHeight * ratio, height: tgtHeight };
     // resize screen images
     this._offScreenTexture = this._device.createTexture({
       size: imgSize,
@@ -126,24 +128,30 @@ export default class RayTracer extends Renderer {
     this._bindGroup = this._device.createBindGroup({
       label: "Ray Tracer Renderer Bind Group",
       layout: this._pipeline.getBindGroupLayout(0),
-      entries: [{
-        binding: 0,
-        resource: this._offScreenTexture.createView()
-      }, 
-      {
-        binding: 1,
-        resource: this._sampler
-      },
-      {
-        binding: 2,
-        resource: { buffer: this._outputSizeBuffer }
-      }],
+      entries: [
+        {
+          binding: 0,
+          resource: this._offScreenTexture.createView(),
+        },
+        {
+          binding: 1,
+          resource: this._sampler,
+        },
+        {
+          binding: 2,
+          resource: { buffer: this._outputSizeBuffer },
+        },
+      ],
     });
     super.resizeCanvas();
     // update the image size in the Shader
-    this._device.queue.writeBuffer(this._outputSizeBuffer, 0, new Float32Array([width, height]));
+    this._device.queue.writeBuffer(
+      this._outputSizeBuffer,
+      0,
+      new Float32Array([width, height])
+    );
   }
-  
+
   async setTracerObject(obj) {
     await obj.init();
     obj._imgWidth = this._offScreenTexture.width;
@@ -152,7 +160,7 @@ export default class RayTracer extends Renderer {
     this._tracer = obj;
     this._tracer.createBindGroup(this._offScreenTexture);
   }
-  
+
   render() {
     // ray tracking compute commands
     if (this._tracer) {
@@ -166,12 +174,14 @@ export default class RayTracer extends Renderer {
     // rendering commands
     let encoder = this._device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
-      colorAttachments: [{
-        view: this._context.getCurrentTexture().createView(),
-        clearValue: this._clearColor,
-        loadOp: "clear",
-        storeOp: "store",
-      }]
+      colorAttachments: [
+        {
+          view: this._context.getCurrentTexture().createView(),
+          clearValue: this._clearColor,
+          loadOp: "clear",
+          storeOp: "store",
+        },
+      ],
     });
     pass.setPipeline(this._pipeline);
     pass.setBindGroup(0, this._bindGroup);
