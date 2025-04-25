@@ -390,6 +390,49 @@ fn rayBoxIntersection(s: vec3f, d: vec3f) -> vec2f { // output is (t, idx)
   return vec2f(t, idx);
 }
 
+fn getColor(hitPt: vec3f, rayDir: vec3f) -> ColorInfo {
+  return ColorInfo(
+    vec4f(1.0, 0.0, 0.0, 1.0), // red color
+    vec3f(0.0, 1.0, 0.0),      // upward normal
+    hitPt,                     // same hit point
+    vec4f(1.0, 1.0, 1.0, 1.0), // white light
+    0.5                        // reflectiveness as f32 ✅
+  );
+}
+
+fn traceScene(p: vec3f, d: vec3f) -> vec4f {
+  var accColor = vec4f(0.0, 0.0, 0.0, 1.0);
+  var curHitPt = p;
+  var curRayDir = d;
+  var curLightIntensity: LightInfo;
+  var reflectMultiplier = 1.0;
+
+  for (var depth = 0; depth < 5; depth++) {
+    var colorInfo = getColor(curHitPt, curRayDir);
+
+    // update ray direction and hit point
+    curRayDir = reflect(curRayDir, colorInfo.normal);
+    curHitPt = colorInfo.hitPt + curRayDir * EPSILON;
+
+    // accumulate color
+    if (depth == 0) {
+      accColor = colorInfo.color;
+    } else {
+      accColor += colorInfo.color * curLightIntensity.intensity * reflectMultiplier;
+    }
+
+    // update reflect multiplier (decays with depth)
+    reflectMultiplier *= colorInfo.reflectiveness;
+
+    // update light info (e.g., color/strength of light at hit)
+    curLightIntensity.intensity = colorInfo.intensity * colorInfo.color;
+  }
+
+  accColor.w = 1.0;
+  return accColor;
+}
+
+
 // a function to get the box emit color
 fn boxEmitColor() -> vec4f {
   return vec4f(0, 0, 0, 1); // my box doesn't emit any color
@@ -480,6 +523,15 @@ struct LightInfo {
   intensity: vec4f, // the final light intensity
   lightdir: vec3f, // the final light direction
 }
+
+struct ColorInfo {
+  color: vec4f,
+  normal: vec3f,
+  hitPt: vec3f,
+  intensity: vec4f,
+  reflectiveness: f32,
+};
+
 
 // a function to compute the light intensity and direction
 fn getLightInfo(lightPos: vec3f, lightDir: vec3f, hitPoint: vec3f, objectNormal: vec3f) -> LightInfo {
@@ -607,19 +659,57 @@ fn computeProjectiveMain(@builtin(global_invocation_id) global_id: vec3u) {
     spt = transformPt(spt);
     rdir = transformDir(rdir);
 
-    // Compute the intersection with the object
+    // Initialize the accumulated color and hit information
+    var accColor = vec4f(0.0, 0.0, 0.0, 1.0);
+    
+    // rayBoxIntersection returns a vec2f, where the first component is t (hit distance), 
+    // and the second component is idx (the face index)
     var hitInfo = rayBoxIntersection(spt, rdir);
+    var t = hitInfo.x; // hit distance
+    var idx = hitInfo.y; // face index
 
-    // Choose shading model based on light parameters
-    if (light.params.w == 1.0) {
-      phongShader(uv, spt, rdir);
-    } else if (light.params.w == 2.0) {
-      toonShader(uv, spt, rdir);
-    } else {
-      lamberShader(uv, spt, rdir); // Default Lambertian shading
+    // Maximum depth of recursion for reflection
+    let maxDepth = 5u;
+
+    // Ray tracing loop for reflection
+    var reflectiveness = 1.0;
+    for (var depth = 0u; depth < maxDepth; depth++) {
+      if (t > 0.0) { // Check if a valid hit occurred (t > 0)
+        // Compute color at the hit point (using shading models)
+        var colorInfo = getColor(spt + rdir * t, rdir);  // Using `spt + rdir * t` for the intersection point
+        accColor += colorInfo.color * colorInfo.intensity * reflectiveness;
+
+        // Reflect the ray at the hit point
+        rdir = reflect(rdir, colorInfo.normal);
+
+        // Move the starting point a small step away from the hit point
+        spt = spt + rdir * 0.001;
+
+        // Update reflectiveness and light intensity for the next bounce
+        reflectiveness *= colorInfo.reflectiveness;
+
+        // Check if reflectiveness has decayed to zero (no further reflections)
+        if (reflectiveness < 0.01) {
+          break;
+        }
+
+        // Update the hit info for the next intersection
+        hitInfo = rayBoxIntersection(spt, rdir);
+        t = hitInfo.x; // Update hit distance
+        idx = hitInfo.y; // Update face index
+      } else {
+        // If no hit, stop tracing further
+        break;
+      }
     }
+
+    // Output the final color to the texture using textureStore
+    textureStore(outTexture, global_id.xy, accColor);
   }
 }
+
+
+
 
 
 fn phongShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
