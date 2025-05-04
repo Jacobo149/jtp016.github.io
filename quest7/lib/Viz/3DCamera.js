@@ -71,35 +71,20 @@ moveZ(d) {
 
   
   rotateX(d) {
-    // TODO: write code to rotate the camera along its x-axis
-    // Suggest to use PGA3D
-    let angle = Math.PI / 2 * d /100; // d represents what percent of a whole rotation we turn
-    var direction = PGA3D.applyMotorToDir([1, 0, 0], this._pose);
-    var cameraLocation = PGA3D.applyMotorToPoint([0, 0, 0], this._pose);
-    let dr = PGA3D.createRotor(angle, direction[0], direction[1], direction[2], cameraLocation[0], cameraLocation[1], cameraLocation[2]);
-    var newpose = PGA3D.geometricProduct(dr, this._pose);
+    let rotor = PGA3D.createRotor(d, 1, 0, 0);
+    let newpose = PGA3D.geometricProduct(rotor, this._pose);
     this.updatePose(newpose);
   }
   
   rotateY(d) {
-    // TODO: write code to rotate the camera along its y-axis
-    // Suggest to use PGA3D
-    let angle = Math.PI / 2 * d /100; // d represents what percent of a whole rotation we turn
-    var direction = PGA3D.applyMotorToDir([0, 1, 0], this._pose);
-    var cameraLocation = PGA3D.applyMotorToPoint([0, 0, 0], this._pose);
-    let dr = PGA3D.createRotor(angle, direction[0], direction[1], direction[2], cameraLocation[0], cameraLocation[1], cameraLocation[2]);
-    var newpose = PGA3D.geometricProduct(dr, this._pose);
+    let rotor = PGA3D.createRotor(d, 0, 1, 0);
+    let newpose = PGA3D.geometricProduct(rotor, this._pose);
     this.updatePose(newpose);
   }
   
   rotateZ(d) {
-    // TODO: write code to rotate the camera along its z-axis
-    // Suggest to use PGA3D
-    let angle = Math.PI / 2 * d /100; // d represents what percent of a whole rotation we turn
-    var direction = PGA3D.applyMotorToDir([0, 0, 1], this._pose);
-    var cameraLocation = PGA3D.applyMotorToPoint([0, 0, 0], this._pose);
-    let dr = PGA3D.createRotor(angle, direction[0], direction[1], direction[2], cameraLocation[0], cameraLocation[1], cameraLocation[2]);
-    var newpose = PGA3D.geometricProduct(dr, this._pose);
+    let rotor = PGA3D.createRotor(d, 0, 0, 1);
+    let newpose = PGA3D.geometricProduct(rotor, this._pose);
     this.updatePose(newpose);
   }
 
