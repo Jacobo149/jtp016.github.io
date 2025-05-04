@@ -734,7 +734,7 @@ fn phongShader(uv: vec2i, spt: vec3f, rdir: vec3f) {
 
     var reflectDir = reflect(lightInfo.lightdir, normal);
     var viewDir = normalize(-rdir);
-    var specFactor = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    var specFactor = pow(max(dot(viewDir, reflectDir), 0.0), 1.0);
     var specularComponent = vec4f(1.0, 1.0, 1.0, 1.0) * light.intensity * specFactor;
 
     var ambientComponent = diffuse * 0.1;
