@@ -402,7 +402,7 @@ fn assignColor(uv: vec2i, t: f32, idx: i32) {
   }
   else { // no hit
     color = vec4f(0.f/255, 56.f/255, 101.f/255, 1.); // Bucknell Blue
-  }
+  }  
   textureStore(outTexture, uv, color);  
 }
 
@@ -425,6 +425,17 @@ fn computeOrthogonalMain(@builtin(global_invocation_id) global_id: vec3u) {
     var hitInfo = rayBoxIntersection(spt, rdir);
     // assign colors
     assignColor(uv, hitInfo.x, i32(hitInfo.y));
+
+    // Change color to the hit point
+    if (hitInfo.x > 0) {
+      let hitPt = spt + hitInfo.x * rdir;
+      let color = vec4f(hitPt.x, hitPt.y, hitPt.z, 1.);
+      textureStore(outTexture, uv, color);
+    }
+    else {
+      let color = vec4f(0.f/255, 56.f/255, 101.f/255, 1.); // Bucknell Blue
+      textureStore(outTexture, uv, color);
+    }
   }
 }
 
